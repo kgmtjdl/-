@@ -71,40 +71,51 @@
     content:''; flex:1; height:1px; background:var(--line);
   }
 
-  /* ---- Tool cards ---- */
+  /* ---- Tool cards (2-column grid) ---- */
+  .cards-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap:12px;
+  }
   .card{
-    display:flex; align-items:center; gap:16px;
+    display:flex; flex-direction:column; align-items:flex-start; gap:10px;
     background:var(--surface);
     border:1px solid var(--line);
     border-radius:18px;
-    padding:18px;
-    margin-bottom:12px;
+    padding:18px 16px;
     text-decoration:none;
     color:inherit;
     transition: transform .18s ease, border-color .18s ease, background .18s ease;
     position:relative;
     overflow:hidden;
   }
+  .card.wide{ grid-column: 1 / -1; flex-direction:row; align-items:center; }
+  .card.wide .body{ flex:1; }
+  .card.wide .arrow{ align-self:center; margin-top:0; }
   .card:active{ transform:scale(0.98); }
   .card:hover{ border-color:rgba(183,110,121,0.5); background:var(--surface-2); }
   .card .glyph{
-    flex:none; width:50px; height:50px; border-radius:14px;
+    flex:none; width:44px; height:44px; border-radius:12px;
     display:flex; align-items:center; justify-content:center;
-    font-size:22px;
+    font-size:20px;
     background:linear-gradient(160deg, rgba(183,110,121,0.25), rgba(183,110,121,0.05));
     border:1px solid rgba(183,110,121,0.3);
   }
-  .card .body{ flex:1; min-width:0; }
-  .card .title{ font-weight:700; font-size:16px; letter-spacing:-0.01em; }
-  .card .desc{ font-size:13px; color:var(--cream-dim); margin-top:3px; line-height:1.5; }
-  .card .arrow{ flex:none; color:var(--cream-dim); font-size:18px; }
+  .card .body{ flex:1; min-width:0; width:100%; }
+  .card .title{ font-weight:700; font-size:14.5px; letter-spacing:-0.01em; line-height:1.35; }
+  .card .desc{ font-size:12px; color:var(--cream-dim); margin-top:5px; line-height:1.5; }
+  .card .arrow{ align-self:flex-end; color:var(--cream-dim); font-size:18px; margin-top:-6px; }
   .card.disabled{ opacity:0.45; pointer-events:none; }
   .badge{
-    position:absolute; top:10px; right:14px;
-    font-size:10px; letter-spacing:0.08em; font-weight:700;
+    position:absolute; top:12px; right:14px;
+    font-size:9.5px; letter-spacing:0.08em; font-weight:700;
     color:var(--gold); text-transform:uppercase;
   }
   .badge.soon{ color:var(--cream-dim); }
+
+  @media(max-width:420px){
+    .cards-grid{ grid-template-columns: 1fr; }
+  }
 
   /* ---- Section label ---- */
   .section-title{
@@ -133,55 +144,59 @@
     <div class="section-title">콘텐츠 제작</div>
     <div class="section-sub">클릭 한 번으로 글부터 이미지까지</div>
 
-    <a class="card" href="script-generator.html" data-tool="script">
-      <div class="glyph">🗞️</div>
-      <div class="body">
-        <div class="title">카드뉴스 대본 제작기</div>
-        <div class="desc">인스타 카드뉴스용 문구를 자동으로 뽑아드려요</div>
-      </div>
-      <div class="arrow">›</div>
-      <span class="badge">NEW</span>
-    </a>
+    <div class="cards-grid">
 
-    <a class="card" href="https://gemini.google.com/gem/bfe2b98fab3c?usp=sharing" target="_blank" rel="noopener" data-tool="blog">
-      <div class="glyph">✍️</div>
-      <div class="body">
-        <div class="title">블로그 1분컷</div>
-        <div class="desc">네이버 블로그 글을 빠르게 완성해요</div>
-      </div>
-      <div class="arrow">›</div>
-      <span class="badge">NEW</span>
-    </a>
+      <a class="card" href="https://gemini.google.com/gem/bfe2b98fab3c?usp=sharing" target="_blank" rel="noopener" data-tool="blog">
+        <div class="glyph">✍️</div>
+        <div class="body">
+          <div class="title">블로그 1분컷</div>
+          <div class="desc">네이버 블로그 글을 빠르게 완성해요</div>
+        </div>
+        <div class="arrow">›</div>
+        <span class="badge">NEW</span>
+      </a>
 
-    <a class="card" href="multi-platform-generator.html" data-tool="multi">
-      <div class="glyph">🔁</div>
-      <div class="body">
-        <div class="title">릴스 멀티플랫폼 변환기</div>
-        <div class="desc">릴스 기획·캡션부터 블로그·틱톡·숏츠·클립·스레드까지</div>
-      </div>
-      <div class="arrow">›</div>
-      <span class="badge">NEW</span>
-    </a>
+      <a class="card" href="https://gemini.google.com/gem/37fad91717e0?usp=sharing" target="_blank" rel="noopener" data-tool="cardnews-ai">
+        <div class="glyph">🎨</div>
+        <div class="body">
+          <div class="title">카드뉴스 AI 생성기</div>
+          <div class="desc">Gemini가 카드뉴스 문구부터 이미지까지 한번에 만들어드려요</div>
+        </div>
+        <div class="arrow">›</div>
+        <span class="badge">NEW</span>
+      </a>
 
-    <a class="card" href="card-editor.html">
-      <div class="glyph">🖼️</div>
-      <div class="body">
-        <div class="title">카드뉴스 편집기</div>
-        <div class="desc">사진 위에 글씨를 얹어 바로 다운로드하세요</div>
-      </div>
-      <div class="arrow">›</div>
-      <span class="badge">NEW</span>
-    </a>
+      <a class="card" href="script-generator.html" data-tool="script">
+        <div class="glyph">🗞️</div>
+        <div class="body">
+          <div class="title">카드뉴스 대본 제작기</div>
+          <div class="desc">인스타 카드뉴스용 문구를 자동으로 뽑아드려요</div>
+        </div>
+        <div class="arrow">›</div>
+        <span class="badge">NEW</span>
+      </a>
 
-    <a class="card" href="https://gemini.google.com/gem/37fad91717e0?usp=sharing" target="_blank" rel="noopener" data-tool="cardnews-ai">
-      <div class="glyph">🎨</div>
-      <div class="body">
-        <div class="title">카드뉴스 AI 생성기</div>
-        <div class="desc">Gemini가 카드뉴스 문구부터 이미지까지 한번에 만들어드려요</div>
-      </div>
-      <div class="arrow">›</div>
-      <span class="badge">NEW</span>
-    </a>
+      <a class="card wide" href="card-editor.html">
+        <div class="glyph">🖼️</div>
+        <div class="body">
+          <div class="title">카드뉴스 편집기</div>
+          <div class="desc">사진 위에 글씨를 얹어 바로 다운로드하세요</div>
+        </div>
+        <div class="arrow">›</div>
+        <span class="badge">NEW</span>
+      </a>
+
+      <a class="card wide" href="multi-platform-generator.html" data-tool="multi">
+        <div class="glyph">🔁</div>
+        <div class="body">
+          <div class="title">릴스 멀티플랫폼 변환기</div>
+          <div class="desc">릴스 기획·캡션부터 블로그·틱톡·숏츠·클립·스레드까지</div>
+        </div>
+        <div class="arrow">›</div>
+        <span class="badge">NEW</span>
+      </a>
+
+    </div>
 
     <footer>© 2026 원장님 AI Studio</footer>
   </div>
