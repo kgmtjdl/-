@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>카드뉴스 편집기</title>
+<style>
+  @font-face {
+    font-family: 'Pretendard';
+    src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2') format('woff2-variations');
+    font-weight: 45 920;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+
+  :root{
+    --bg:#1c1417; --surface:#251b1f; --surface-2:#2e2226;
+    --cream:#f6efe9; --cream-dim:#cbb9ae;
+    --mauve:#b76e79; --mauve-soft:#d8a2a9;
+    --gold:#c9a227; --line: rgba(246,239,233,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--cream);
+    font-family:'Pretendard', sans-serif;
+    min-height:100vh;
+  }
+  header{
+    padding:18px 20px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; background:rgba(28,20,23,0.9); backdrop-filter:blur(6px);
+    z-index:10;
+  }
+  header a{ color:var(--cream-dim); text-decoration:none; font-size:13px; }
+  header h1{
+    font-family:'Fraunces', serif; font-weight:500; font-size:16px;
+  }
+
+  .layout{
+    display:flex; flex-direction:column;
+    max-width:1100px; margin:0 auto;
+  }
+  @media(min-width:900px){
+    .layout{ flex-direction:row; align-items:flex-start; gap:28px; padding:28px 20px; }
+  }
+
+  /* ---- canvas stage ---- */
+  .stage-col{ flex:1; display:flex; flex-direction:column; align-items:center; padding:24px 16px 8px; }
+  .stage{
+    position:relative; width:100%; max-width:380px; aspect-ratio:4/5;
+    background:#3a2c30; border-radius:14px; overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,0.45);
+    border:1px solid var(--line);
+    background-size:cover; background-position:center;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .stage .placeholder{ color:var(--cream-dim); font-size:13px; text-align:center; padding:20px;}
+  .layer{
+    position:absolute; cursor:grab; padding:6px 10px;
+    line-height:1.35; white-space:pre-wrap; word-break:keep-all;
+    user-select:none; touch-action:none;
+  }
+  .layer.selected{ outline:1.5px dashed var(--gold); outline-offset:4px; }
+  .layer:active{ cursor:grabbing; }
+
+  /* thumbnails */
+  .thumbs{ display:flex; gap:8px; margin-top:16px; overflow-x:auto; max-width:380px; padding-bottom:4px; }
+  .thumb{
+    flex:none; width:46px; height:57px; border-radius:6px; background-size:cover; background-position:center;
+    background-color:var(--surface-2); border:1.5px solid var(--line); cursor:pointer; position:relative;
+  }
+  .thumb.active{ border-color:var(--mauve); }
+  .thumb .n{ position:absolute; bottom:2px; right:3px; font-size:9px; color:var(--cream-dim); }
+  .thumb-add{
+    flex:none; width:46px; height:57px; border-radius:6px; border:1.5px dashed var(--line);
+    display:flex; align-items:center; justify-content:center; color:var(--cream-dim); cursor:pointer; font-size:18px; background:none;
+  }
+
+  .slide-actions{ display:flex; gap:8px; margin-top:14px; }
+  .btn-mini{
+    font-size:12px; padding:7px 12px; border-radius:8px; border:1px solid var(--line);
+    background:var(--surface); color:var(--cream-dim); cursor:pointer;
+  }
+  .btn-mini:hover{ color:var(--cream); border-color:var(--mauve); }
+
+  /* ---- controls panel ---- */
+  .panel{
+    width:100%; max-width:420px; margin:0 auto; padding:8px 16px 40px;
+  }
+  @media(min-width:900px){ .panel{ max-width:340px; margin:0; padding:24px 0; } }
+
+  .group{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:16px; margin-bottom:14px;
+  }
+  .group h3{
+    font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--cream-dim);
+    margin:0 0 12px; font-weight:600;
+  }
+  .row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .row:last-child{ margin-bottom:0; }
+  .row label{ font-size:13px; color:var(--cream-dim); flex:none; width:64px; }
+  .row input[type=text], .row textarea{
+    flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
+    color:var(--cream); padding:8px 10px; font-family:inherit; font-size:14px; resize:vertical;
+  }
+  .row input[type=range]{ flex:1; }
+  .row input[type=color]{ width:38px; height:32px; border:none; border-radius:6px; background:none; padding:0; }
+  .row select{
+    flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
+    color:var(--cream); padding:8px 10px; font-size:13px;
+  }
+  .swatches{ display:flex; gap:8px; }
+  .swatch{
+    width:26px; height:26px; border-radius:50%; border:2px solid rgba(255,255,255,0.15); cursor:pointer;
+  }
+  .file-btn{
+    display:block; text-align:center; padding:10px; border-radius:9px;
+    background:linear-gradient(160deg, var(--mauve), #995a63); color:#fff;
+    font-size:13px; font-weight:600; cursor:pointer; border:none; width:100%;
+  }
+  .add-text-btn{
+    width:100%; padding:10px; border-radius:9px; border:1px solid var(--line);
+    background:var(--surface-2); color:var(--cream); font-size:13px; cursor:pointer; margin-top:8px;
+  }
+  .download-btn{
+    width:100%; padding:13px; border-radius:11px; border:none;
+    background:var(--gold); color:#1c1417; font-weight:700; font-size:14px; cursor:pointer;
+    margin-top:6px;
+  }
+  .download-btn:hover{ filter:brightness(1.06); }
+  .hint{ font-size:11.5px; color:var(--cream-dim); margin-top:8px; line-height:1.6; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🖼️ 카드뉴스 편집기</h1>
+  <a href="index.html">← 홈으로</a>
+</header>
+
+<div class="layout">
+  <div class="stage-col">
+    <div class="stage" id="stage">
+      <div class="placeholder" id="placeholder">사진을 업로드하면<br>여기에 표시됩니다</div>
+    </div>
+
+    <div class="thumbs" id="thumbs"></div>
+
+    <div class="slide-actions">
+      <button class="btn-mini" id="dup-slide">이 슬라이드 복제</button>
+      <button class="btn-mini" id="del-slide">삭제</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="group">
+      <h3>배경 사진</h3>
+      <label class="file-btn">
+        사진 업로드
+        <input type="file" id="img-input" accept="image/*" style="display:none">
+      </label>
+      <p class="hint">권장 비율 4:5 (인스타 세로형). 슬라이드마다 다른 사진을 넣을 수 있어요.</p>
+    </div>
+
+    <div class="group">
+      <h3>텍스트</h3>
+      <button class="add-text-btn" id="add-text">+ 텍스트 추가</button>
+      <div id="text-editor" style="display:none; margin-top:12px;">
+        <div class="row">
+          <label>내용</label>
+          <textarea id="txt-content" rows="2"></textarea>
+        </div>
+        <div class="row">
+          <label>크기</label>
+          <input type="range" id="txt-size" min="14" max="72" value="28">
+        </div>
+        <div class="row">
+          <label>색상</label>
+          <input type="color" id="txt-color" value="#f6efe9">
+          <div class="swatches">
+            <div class="swatch" style="background:#f6efe9" data-c="#f6efe9"></div>
+            <div class="swatch" style="background:#c9a227" data-c="#c9a227"></div>
+            <div class="swatch" style="background:#b76e79" data-c="#b76e79"></div>
+            <div class="swatch" style="background:#1c1417" data-c="#1c1417"></div>
+          </div>
+        </div>
+        <div class="row">
+          <label>굵기</label>
+          <select id="txt-weight">
+            <option value="400">보통</option>
+            <option value="700" selected>굵게</option>
+            <option value="900">아주 굵게</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>정렬</label>
+          <select id="txt-align">
+            <option value="left">왼쪽</option>
+            <option value="center" selected>가운데</option>
+            <option value="right">오른쪽</option>
+          </select>
+        </div>
+        <button class="btn-mini" id="del-text" style="width:100%; margin-top:4px;">이 텍스트 삭제</button>
+      </div>
+      <p class="hint" id="text-hint">텍스트 상자를 드래그해서 원하는 위치로 옮길 수 있어요.</p>
+    </div>
+
+    <button class="download-btn" id="download-btn">이 슬라이드 PNG로 저장</button>
+    <button class="btn-mini" id="download-all" style="width:100%; margin-top:8px;">전체 슬라이드 한번에 저장</button>
+  </div>
+</div>
+
+<script>
+// ---------- state ----------
+let slides = [ makeSlide() ];
+let currentSlide = 0;
+let selectedLayerId = null;
+
+function makeSlide(){
+  return { id: crypto.randomUUID(), image: null, layers: [] };
+}
+function makeLayer(){
+  return {
+    id: crypto.randomUUID(),
+    text: '문구를 입력하세요',
+    x: 50, y: 50, // percent
+    size: 28, color: '#f6efe9', weight: 700, align: 'center'
+  };
+}
+
+const stage = document.getElementById('stage');
+const placeholder = document.getElementById('placeholder');
+const thumbsEl = document.getElementById('thumbs');
+
+function currentSlideObj(){ return slides[currentSlide]; }
+function selectedLayer(){
+  const s = currentSlideObj();
+  return s.layers.find(l => l.id === selectedLayerId) || null;
+}
+
+// ---------- render ----------
+function render(){
+  const s = currentSlideObj();
+  stage.style.backgroundImage = s.image ? `url(${s.image})` : 'none';
+  placeholder.style.display = s.image ? 'none' : 'block';
+
+  // clear existing layer DOM (keep placeholder)
+  [...stage.querySelectorAll('.layer')].forEach(el => el.remove());
+
+  s.layers.forEach(layer => {
+    const el = document.createElement('div');
+    el.className = 'layer' + (layer.id === selectedLayerId ? ' selected' : '');
+    el.style.left = layer.x + '%';
+    el.style.top = layer.y + '%';
+    el.style.transform = 'translate(-50%,-50%)';
+    el.style.fontSize = layer.size + 'px';
+    el.style.color = layer.color;
+    el.style.fontWeight = layer.weight;
+    el.style.textAlign = layer.align;
+    el.style.maxWidth = '90%';
+    el.textContent = layer.text;
+    el.dataset.id = layer.id;
+    stage.appendChild(el);
+    attachDrag(el, layer);
+    el.addEventListener('pointerdown', () => selectLayer(layer.id));
+  });
+
+  renderThumbs();
+  renderTextEditor();
+}
+
+function renderThumbs(){
+  thumbsEl.innerHTML = '';
+  slides.forEach((s, i) => {
+    const t = document.createElement('div');
+    t.className = 'thumb' + (i === currentSlide ? ' active' : '');
+    if (s.image) t.style.backgroundImage = `url(${s.image})`;
+    t.innerHTML = `<span class="n">${i+1}</span>`;
+    t.addEventListener('click', () => { currentSlide = i; selectedLayerId = null; render(); });
+    thumbsEl.appendChild(t);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'thumb-add';
+  addBtn.textContent = '+';
+  addBtn.addEventListener('click', () => {
+    slides.push(makeSlide());
+    currentSlide = slides.length - 1;
+    selectedLayerId = null;
+    render();
+  });
+  thumbsEl.appendChild(addBtn);
+}
+
+function renderTextEditor(){
+  const editor = document.getElementById('text-editor');
+  const hint = document.getElementById('text-hint');
+  const layer = selectedLayer();
+  if (!layer){ editor.style.display = 'none'; hint.style.display = 'block'; return; }
+  editor.style.display = 'block';
+  hint.style.display = 'none';
+  document.getElementById('txt-content').value = layer.text;
+  document.getElementById('txt-size').value = layer.size;
+  document.getElementById('txt-color').value = layer.color;
+  document.getElementById('txt-weight').value = layer.weight;
+  document.getElementById('txt-align').value = layer.align;
+}
+
+function selectLayer(id){ selectedLayerId = id; render(); }
+
+// ---------- drag ----------
+function attachDrag(el, layer){
+  let dragging = false, startX, startY, startLx, startLy;
+  el.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    el.setPointerCapture(e.pointerId);
+    startX = e.clientX; startY = e.clientY;
+    startLx = layer.x; startLy = layer.y;
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const rect = stage.getBoundingClientRect();
+    const dx = (e.clientX - startX) / rect.width * 100;
+    const dy = (e.clientY - startY) / rect.height * 100;
+    layer.x = Math.min(96, Math.max(4, startLx + dx));
+    layer.y = Math.min(96, Math.max(4, startLy + dy));
+    el.style.left = layer.x + '%';
+    el.style.top = layer.y + '%';
+  });
+  el.addEventListener('pointerup', () => dragging = false);
+}
+
+// ---------- image upload ----------
+document.getElementById('img-input').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    currentSlideObj().image = ev.target.result;
+    render();
+  };
+  reader.readAsDataURL(file);
+});
+
+// ---------- text controls ----------
+document.getElementById('add-text').addEventListener('click', () => {
+  const layer = makeLayer();
+  currentSlideObj().layers.push(layer);
+  selectedLayerId = layer.id;
+  render();
+});
+document.getElementById('txt-content').addEventListener('input', (e) => {
+  const l = selectedLayer(); if (!l) return; l.text = e.target.value; render();
+});
+document.getElementById('txt-size').addEventListener('input', (e) => {
+  const l = selectedLayer(); if (!l) return; l.size = +e.target.value; render();
+});
+document.getElementById('txt-color').addEventListener('input', (e) => {
+  const l = selectedLayer(); if (!l) return; l.color = e.target.value; render();
+});
+document.getElementById('txt-weight').addEventListener('change', (e) => {
+  const l = selectedLayer(); if (!l) return; l.weight = e.target.value; render();
+});
+document.getElementById('txt-align').addEventListener('change', (e) => {
+  const l = selectedLayer(); if (!l) return; l.align = e.target.value; render();
+});
+document.querySelectorAll('.swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    const l = selectedLayer(); if (!l) return;
+    l.color = sw.dataset.c;
+    document.getElementById('txt-color').value = sw.dataset.c;
+    render();
+  });
+});
+document.getElementById('del-text').addEventListener('click', () => {
+  const s = currentSlideObj();
+  s.layers = s.layers.filter(l => l.id !== selectedLayerId);
+  selectedLayerId = null;
+  render();
+});
+
+// ---------- slide actions ----------
+document.getElementById('dup-slide').addEventListener('click', () => {
+  const copy = JSON.parse(JSON.stringify(currentSlideObj()));
+  copy.id = crypto.randomUUID();
+  copy.layers.forEach(l => l.id = crypto.randomUUID());
+  slides.splice(currentSlide + 1, 0, copy);
+  currentSlide += 1;
+  render();
+});
+document.getElementById('del-slide').addEventListener('click', () => {
+  if (slides.length === 1){ slides = [makeSlide()]; currentSlide = 0; render(); return; }
+  slides.splice(currentSlide, 1);
+  currentSlide = Math.max(0, currentSlide - 1);
+  selectedLayerId = null;
+  render();
+});
+
+// deselect when clicking empty stage area
+stage.addEventListener('pointerdown', (e) => {
+  if (e.target === stage || e.target === placeholder){ selectedLayerId = null; render(); }
+});
+
+// ---------- export via canvas ----------
+async function slideToCanvas(slide, W = 1080, H = 1350){
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // background
+  if (slide.image){
+    const img = await loadImage(slide.image);
+    // cover-fit
+    const scale = Math.max(W / img.width, H / img.height);
+    const w = img.width * scale, h = img.height * scale;
+    ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+  } else {
+    ctx.fillStyle = '#3a2c30';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // layers
+  slide.layers.forEach(layer => {
+    const scaledSize = layer.size * (W / 380); // 380 = stage css width basis
+    ctx.font = `${layer.weight} ${scaledSize}px Pretendard, sans-serif`;
+    ctx.fillStyle = layer.color;
+    ctx.textAlign = layer.align;
+    ctx.textBaseline = 'middle';
+    const x = (layer.x / 100) * W;
+    const y = (layer.y / 100) * H;
+    const lines = wrapText(ctx, layer.text, W * 0.86);
+    const lineHeight = scaledSize * 1.35;
+    const totalH = lineHeight * lines.length;
+    lines.forEach((line, i) => {
+      ctx.fillText(line, x, y - totalH/2 + lineHeight*i + lineHeight/2);
+    });
+  });
+
+  return canvas;
+}
+
+function wrapText(ctx, text, maxWidth){
+  const paragraphs = text.split('\n');
+  const outLines = [];
+  paragraphs.forEach(par => {
+    const words = par.split(' ');
+    let line = '';
+    words.forEach(word => {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxWidth && line){
+        outLines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    });
+    outLines.push(line);
+  });
+  return outLines;
+}
+
+function loadImage(src){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+document.getElementById('download-btn').addEventListener('click', async () => {
+  const canvas = await slideToCanvas(currentSlideObj());
+  downloadCanvas(canvas, `카드뉴스_${currentSlide+1}.png`);
+});
+
+document.getElementById('download-all').addEventListener('click', async () => {
+  for (let i = 0; i < slides.length; i++){
+    const canvas = await slideToCanvas(slides[i]);
+    downloadCanvas(canvas, `카드뉴스_${i+1}.png`);
+    await new Promise(r => setTimeout(r, 250));
+  }
+});
+
+function downloadCanvas(canvas, filename){
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+}
+
+render();
+</script>
+</body>
+</html>

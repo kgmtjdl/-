@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>원장님 AI 스튜디오</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<style>
+  @font-face {
+    font-family: 'Pretendard';
+    src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2') format('woff2-variations');
+    font-weight: 45 920;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&display=swap');
+
+  :root{
+    --bg: #1c1417;
+    --surface: #251b1f;
+    --surface-2: #2e2226;
+    --cream: #f6efe9;
+    --cream-dim: #cbb9ae;
+    --mauve: #b76e79;
+    --mauve-soft: #d8a2a9;
+    --gold: #c9a227;
+    --sage: #7c8b6f;
+    --line: rgba(246,239,233,0.12);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:
+      radial-gradient(1100px 600px at 15% -10%, rgba(183,110,121,0.18), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(201,162,39,0.10), transparent 55%),
+      var(--bg);
+    color:var(--cream);
+    font-family:'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height:100vh;
+    padding-bottom:80px;
+  }
+  .wrap{ max-width:640px; margin:0 auto; padding:0 22px; }
+
+  /* ---- Hero ---- */
+  .hero{ padding:64px 22px 40px; text-align:center; }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:12px; letter-spacing:0.18em; color:var(--gold);
+    text-transform:uppercase; font-weight:600;
+    border:1px solid rgba(201,162,39,0.35);
+    padding:6px 14px; border-radius:100px;
+    margin-bottom:22px;
+  }
+  .eyebrow::before{ content:'✂'; font-size:12px; }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:clamp(28px, 7vw, 40px);
+    line-height:1.35;
+    letter-spacing:-0.01em;
+  }
+  h1 em{ color:var(--mauve-soft); font-style:normal; }
+  .hero p{
+    margin-top:16px; color:var(--cream-dim); font-size:15px; line-height:1.7;
+  }
+
+  .divider{
+    display:flex; align-items:center; gap:10px;
+    color:var(--cream-dim); font-size:11px; letter-spacing:0.12em;
+    margin:36px 0 18px; text-transform:uppercase;
+  }
+  .divider::before, .divider::after{
+    content:''; flex:1; height:1px; background:var(--line);
+  }
+
+  /* ---- Tool cards ---- */
+  .card{
+    display:flex; align-items:center; gap:16px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:18px;
+    margin-bottom:12px;
+    text-decoration:none;
+    color:inherit;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    position:relative;
+    overflow:hidden;
+  }
+  .card:active{ transform:scale(0.98); }
+  .card:hover{ border-color:rgba(183,110,121,0.5); background:var(--surface-2); }
+  .card .glyph{
+    flex:none; width:50px; height:50px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px;
+    background:linear-gradient(160deg, rgba(183,110,121,0.25), rgba(183,110,121,0.05));
+    border:1px solid rgba(183,110,121,0.3);
+  }
+  .card .body{ flex:1; min-width:0; }
+  .card .title{ font-weight:700; font-size:16px; letter-spacing:-0.01em; }
+  .card .desc{ font-size:13px; color:var(--cream-dim); margin-top:3px; line-height:1.5; }
+  .card .arrow{ flex:none; color:var(--cream-dim); font-size:18px; }
+  .card.disabled{ opacity:0.45; pointer-events:none; }
+  .badge{
+    position:absolute; top:10px; right:14px;
+    font-size:10px; letter-spacing:0.08em; font-weight:700;
+    color:var(--gold); text-transform:uppercase;
+  }
+  .badge.soon{ color:var(--cream-dim); }
+
+  /* ---- Section label ---- */
+  .section-title{
+    font-family:'Fraunces', serif; font-weight:500;
+    font-size:19px; margin-bottom:4px;
+  }
+  .section-sub{ font-size:13px; color:var(--cream-dim); margin-bottom:16px; }
+
+  footer{
+    text-align:center; margin-top:50px;
+    font-size:12px; color:var(--cream-dim);
+  }
+</style>
+</head>
+<body>
+
+  <section class="hero">
+    <span class="eyebrow">Premium AI Studio</span>
+    <h1>원장님의 하루를<br><em>1분</em>으로 줄여드립니다</h1>
+    <p>대본 · 블로그 · SNS 콘텐츠 · 카드뉴스까지<br>예약률을 높이는 AI 도구 모음</p>
+  </section>
+
+  <div class="wrap">
+
+    <div class="divider">Marketing Tools</div>
+    <div class="section-title">콘텐츠 제작</div>
+    <div class="section-sub">클릭 한 번으로 글부터 이미지까지</div>
+
+    <a class="card" href="#" data-tool="script">
+      <div class="glyph">🗞️</div>
+      <div class="body">
+        <div class="title">카드뉴스 대본 제작기</div>
+        <div class="desc">인스타 카드뉴스용 문구를 자동으로 뽑아드려요</div>
+      </div>
+      <div class="arrow">›</div>
+      <span class="badge soon">준비중</span>
+    </a>
+
+    <a class="card" href="#" data-tool="blog">
+      <div class="glyph">✍️</div>
+      <div class="body">
+        <div class="title">블로그 1분컷</div>
+        <div class="desc">네이버 블로그 글을 빠르게 완성해요</div>
+      </div>
+      <div class="arrow">›</div>
+      <span class="badge soon">준비중</span>
+    </a>
+
+    <a class="card" href="#" data-tool="multi">
+      <div class="glyph">🔁</div>
+      <div class="body">
+        <div class="title">멀티플랫폼 변환기</div>
+        <div class="desc">한 번 쓴 글을 인스타 · 틱톡 · 유튜브 · 스레드용으로</div>
+      </div>
+      <div class="arrow">›</div>
+      <span class="badge soon">준비중</span>
+    </a>
+
+    <a class="card" href="card-editor.html">
+      <div class="glyph">🖼️</div>
+      <div class="body">
+        <div class="title">카드뉴스 편집기</div>
+        <div class="desc">사진 위에 글씨를 얹어 바로 다운로드하세요</div>
+      </div>
+      <div class="arrow">›</div>
+      <span class="badge">NEW</span>
+    </a>
+
+    <footer>© 2026 원장님 AI Studio</footer>
+  </div>
+
+</body>
+</html>
