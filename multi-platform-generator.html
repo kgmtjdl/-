@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>릴스 멀티플랫폼 변환기</title>
+<style>
+  @font-face {
+    font-family: 'Pretendard';
+    src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2') format('woff2-variations');
+    font-weight: 45 920;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+
+  :root{
+    --bg:#1c1417; --surface:#251b1f; --surface-2:#2e2226;
+    --cream:#f6efe9; --cream-dim:#cbb9ae;
+    --mauve:#b76e79; --mauve-soft:#d8a2a9;
+    --gold:#c9a227; --line: rgba(246,239,233,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--cream);
+    font-family:'Pretendard', sans-serif; min-height:100vh; padding-bottom:60px;
+  }
+  header{
+    padding:18px 20px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; background:rgba(28,20,23,0.94); backdrop-filter:blur(6px); z-index:20;
+  }
+  header a{ color:var(--cream-dim); text-decoration:none; font-size:13px; }
+  header h1{ font-family:'Fraunces', serif; font-weight:500; font-size:16px; }
+
+  .wrap{ max-width:680px; margin:0 auto; padding:24px 18px 0; }
+  .intro{ font-size:13px; color:var(--cream-dim); line-height:1.7; margin-bottom:20px; }
+
+  /* mode toggle */
+  .mode-toggle{ display:flex; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:5px; margin-bottom:22px; }
+  .mode-btn{ flex:1; padding:12px; border-radius:10px; border:none; background:none; color:var(--cream-dim); font-size:13px; font-weight:700; cursor:pointer; text-align:center; line-height:1.4; }
+  .mode-btn small{ display:block; font-weight:400; font-size:11px; margin-top:2px; opacity:0.8; }
+  .mode-btn.active{ background:var(--gold); color:#1c1417; }
+
+  .group{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:16px; }
+  .group h3{ font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--mauve-soft); font-weight:700; margin:0 0 12px; }
+  .field{ margin-bottom:12px; }
+  .field:last-child{ margin-bottom:0; }
+  .field label{ display:block; font-size:12.5px; color:var(--cream-dim); margin-bottom:6px; }
+  .field textarea, .field input[type=text], .field input[type=password], .field select{
+    width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:9px;
+    color:var(--cream); padding:10px 12px; font-family:inherit; font-size:13.5px; resize:vertical;
+  }
+  .field .hint{ font-size:11px; color:var(--cream-dim); margin-top:6px; line-height:1.5; }
+  .field .hint a{ color:var(--gold); }
+
+  .key-row{ display:flex; gap:8px; }
+  .key-row input{ flex:1; }
+  .key-row button{ flex:none; padding:0 14px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--cream-dim); cursor:pointer; font-size:12px; }
+
+  .step{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:16px; }
+  .step-head{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .step-num{ width:26px; height:26px; border-radius:50%; background:var(--gold); color:#1c1417; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; flex:none; }
+  .step-title{ font-family:'Fraunces', serif; font-size:15px; }
+  .step-sub{ font-size:12px; color:var(--cream-dim); margin:2px 0 0 36px; }
+
+  .btn-primary{ width:100%; padding:13px; border-radius:11px; border:none; background:var(--gold); color:#1c1417; font-weight:700; font-size:14px; cursor:pointer; }
+  .btn-primary:hover{ filter:brightness(1.06); }
+  .btn-primary:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn-primary.loading{ opacity:0.7; }
+
+  .result-box{ margin-top:12px; }
+  .result-box textarea{ width:100%; min-height:120px; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; color:var(--cream); padding:12px; font-family:inherit; font-size:13.5px; line-height:1.7; resize:vertical; }
+  .result-actions{ display:flex; justify-content:flex-end; margin-top:6px; }
+  .mini-link{ background:none; border:none; color:var(--cream-dim); font-size:12px; cursor:pointer; padding:0; }
+  .mini-link:hover{ color:var(--gold); }
+  .copy-ok{ color:var(--gold); }
+
+  .platform-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:8px; margin-bottom:4px; }
+  .platform-btn{ padding:11px; border-radius:10px; border:1px solid var(--line); background:var(--surface-2); color:var(--cream); font-size:13px; cursor:pointer; text-align:center; }
+  .platform-btn:hover{ border-color:var(--mauve); }
+  .platform-btn.done{ border-color:var(--gold); color:var(--gold); }
+
+  .platform-result{ display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:14px; }
+  .platform-result.show{ display:block; }
+  .platform-result .tag{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--mauve-soft); font-weight:700; margin-bottom:8px; }
+
+  .error-box{ background:rgba(183,110,121,0.12); border:1px solid rgba(183,110,121,0.4); border-radius:10px; padding:10px 12px; font-size:12.5px; color:var(--mauve-soft); margin-top:10px; display:none; }
+  .error-box.show{ display:block; }
+
+  .radio-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .radio-row button{ padding:8px 12px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--cream-dim); font-size:12.5px; cursor:pointer; }
+  .radio-row button.active{ border-color:var(--gold); color:var(--gold); }
+  .checklist-box{
+    background:rgba(201,162,39,0.08); border:1px solid rgba(201,162,39,0.25); border-radius:10px;
+    padding:10px 12px; font-size:12px; color:var(--cream-dim); line-height:1.8; margin-top:12px;
+  }
+  .checklist-title{ color:var(--gold); font-weight:700; margin-bottom:4px; }
+  .gate-box{ margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+  .gate-item{ display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--cream-dim); margin-bottom:8px; cursor:pointer; line-height:1.5; }
+  .gate-item input{ margin-top:2px; flex:none; width:16px; height:16px; accent-color:var(--gold); cursor:pointer; }
+  .gate-hint{ font-size:11px; color:var(--cream-dim); margin:4px 0 10px; line-height:1.6; }
+  .step[style*="opacity:0.4"]{ transition:opacity .2s; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔁 릴스 멀티플랫폼 변환기</h1>
+  <a href="index.html">← 홈으로</a>
+</header>
+
+<div class="wrap">
+  <p class="intro">릴스 하나로 블로그·틱톡·유튜브숏츠·네이버클립·스레드까지 한번에 만들어보세요.<br>먼저 방식을 고르고, 아래 순서대로 진행하면 돼요.</p>
+
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="mode-template" data-mode="template">
+      무료 템플릿 모드
+      <small>API 키 없이 바로 사용</small>
+    </button>
+    <button class="mode-btn" id="mode-ai" data-mode="ai">
+      AI 연동 모드
+      <small>API 키 필요 · 훨씬 정교함</small>
+    </button>
+  </div>
+
+  <div class="group" id="ai-setup" style="display:none;">
+    <h3>AI 연동 설정</h3>
+    <div class="field">
+      <label>Gemini API 키</label>
+      <div class="key-row">
+        <input type="password" id="api-key" placeholder="여기에 API 키를 붙여넣으세요">
+        <button id="toggle-key">보기</button>
+      </div>
+      <p class="hint">Google AI Studio(<a href="https://aistudio.google.com/" target="_blank" rel="noopener">aistudio.google.com</a>)에 구글 계정으로 로그인 → "Get API key" 클릭하면 무료로 발급돼요. 키는 이 브라우저에만 저장되고 서버로 전송되지 않아요.</p>
+    </div>
+    <div class="field">
+      <label>릴스 코칭 노트 (원장님이 받으신 코칭 핵심이 기본으로 들어가 있어요, 자유롭게 수정 가능)</label>
+      <textarea id="coaching-notes" rows="10">[핵심 원칙 — 매 기획마다 반드시 지킬 것]
+1. 기능이 아니라 욕망을 기획한다. "왜?"를 반복해서 표면적 기능보다 한두 단계 위의 진짜 욕망을 찾는다. (예: 모공→피부→예뻐짐→자신감→남에게 잘 보이고 싶음)
+2. 영상 하나 = 메시지 하나. 전달할 정보가 많아도 영상 안에서는 한 문장으로 설명되는 메시지 하나만 남기고, 나머지 디테일은 캡션/댓글로 뺀다.
+3. 후킹은 자극적인 문장이 아니라 "더 많은 사람이 공감할 수 있는" 문장이어야 한다. 주제는 넓게(예: 피부), 사례는 좁게(모공/각질 등) 가져간다. 작은 문제보다 큰 욕망을 건드린다.
+4. 초반 3초 안에 문제와 해결을 동시에 보여준다. 순서는 반드시 "결론(결과) → 이유 → 방법" (두괄식). 원인 설명이나 본론과 관계없는 도입으로 절대 시작하지 않는다.
+5. 설명보다 화면(비주얼)으로 먼저 설득한다. 말로 풀 수 있는 것도 Before/After, 결과 화면처럼 시각적으로 보여줄 수 있으면 화면 지시문으로 남긴다.
+6. 저장할 가치를 만들려면 "전문가만 아는 디테일/사람들이 자주 놓치는 실수/현장에서 자주 보는 사례" 중 하나는 반드시 넣는다.
+7. 스토리텔링도 구조는 정보성과 동일하다 — 가장 강한 장면/결과부터 시작(미괄식 금지).
+8. 정보보다 "사람"이 기억에 남는다. 가능하면 실제 고객 사례, 원장님만의 철학, 변화 스토리를 자연스럽게 담는다.
+9. 말투는 아나운서처럼 딱딱하지 않게, 친한 친구에게 설명하듯 자연스럽게 쓴다.
+
+[기획 전 자가 체크리스트 3가지]
+① 이 사람들이 진짜 원하는 것은 무엇인가? (기능보다 한두 단계 위 욕망)
+② 이 영상을 보면 얻는 것이 한 문장으로 설명되는가?
+③ 이 후킹은 더 많은 사람이 공감할 수 있는 문장인가?</textarea>
+    </div>
+  </div>
+
+  <div class="group">
+    <h3>기본 정보</h3>
+    <div class="field">
+      <label>릴스 주제</label>
+      <textarea id="topic" rows="2" placeholder="예: 여름 손상모 관리 꿀팁, 탈모 커버 펌 추천"></textarea>
+    </div>
+    <div class="field">
+      <label>타겟 고객 (선택)</label>
+      <input type="text" id="audience" placeholder="예: 30대 직장인 여성, 처음 방문하는 손님">
+    </div>
+    <div class="field">
+      <label>톤앤매너</label>
+      <div class="radio-row" id="tone-row">
+        <button data-v="친근하게" class="active">친근하게</button>
+        <button data-v="전문적으로">전문적으로</button>
+        <button data-v="발랄하게">발랄하게</button>
+        <button data-v="신뢰감있게">신뢰감있게</button>
+      </div>
+    </div>
+    <div class="field" id="hookstyle-field">
+      <label>후킹 스타일</label>
+      <div class="radio-row" id="hook-row">
+        <button data-v="question" class="active">질문형</button>
+        <button data-v="twist">반전형</button>
+        <button data-v="empathy">공감형</button>
+        <button data-v="number">숫자형</button>
+        <button data-v="warning">경고형</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head"><div class="step-num">1</div><div class="step-title">릴스 기획 (후킹 + 대본)</div></div>
+    <p class="step-sub">주제를 바탕으로 시선을 끄는 후킹과 전체 대본 구조를 만들어요.</p>
+    <div class="checklist-box">
+      <div class="checklist-title">✔ 기획 전 자가 체크리스트</div>
+      ① 이 사람들이 진짜 원하는 것은? (기능보다 한두 단계 위 욕망)<br>
+      ② 얻는 것이 한 문장으로 설명되는가?<br>
+      ③ 더 많은 사람이 공감할 수 있는 후킹인가?
+    </div>
+    <button class="btn-primary" id="gen-script" style="margin-top:12px;">기획 만들기</button>
+    <div class="error-box" id="script-error"></div>
+    <div class="result-box" id="script-result" style="display:none;">
+      <textarea id="script-text" rows="8"></textarea>
+      <div class="result-actions"><button class="mini-link" id="copy-script">복사</button></div>
+      <div class="gate-box" id="gate-box">
+        <div class="checklist-title">👀 다음으로 넘어가기 전에 직접 확인해주세요</div>
+        <label class="gate-item"><input type="checkbox" class="gate-check"> ① 기능이 아니라 진짜 욕망을 건드리고 있나요?</label>
+        <label class="gate-item"><input type="checkbox" class="gate-check"> ② 메시지가 한 문장으로 설명되나요? (너무 많은 정보가 섞여있지 않나요?)</label>
+        <label class="gate-item"><input type="checkbox" class="gate-check"> ③ 더 많은 사람이 공감할 수 있는 후킹인가요? (너무 작은 문제는 아닌가요?)</label>
+        <p class="gate-hint">셋 다 체크해야 2단계로 넘어갈 수 있어요. 하나라도 아니다 싶으면 대본을 직접 수정하거나 "다시 만들기"를 눌러주세요.</p>
+        <button class="btn-outline" id="regen-script">🔁 다시 만들기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="step" id="step2-wrap" style="opacity:0.4; pointer-events:none;">
+    <div class="step-head"><div class="step-num">2</div><div class="step-title">릴스 캡션(설명글)</div></div>
+    <p class="step-sub" id="step2-sub">위 대본을 바탕으로 인스타/릴스에 올릴 캡션을 만들어요. (1단계 체크리스트를 먼저 완료해주세요)</p>
+    <button class="btn-primary" id="gen-caption" style="margin-top:12px;">캡션 만들기</button>
+    <div class="error-box" id="caption-error"></div>
+    <div class="result-box" id="caption-result" style="display:none;">
+      <textarea id="caption-text" rows="6"></textarea>
+      <div class="result-actions"><button class="mini-link" id="copy-caption">복사</button></div>
+    </div>
+  </div>
+
+  <div class="step" id="step3-wrap" style="opacity:0.4; pointer-events:none;">
+    <div class="step-head"><div class="step-num">3</div><div class="step-title">플랫폼별 글로 변환</div></div>
+    <p class="step-sub">캡션을 바탕으로 각 플랫폼 SEO 규칙에 맞게 제목·본문·해시태그까지 다시 써줘요.</p>
+    <div class="checklist-box">
+      <div class="checklist-title">📐 플랫폼별로 다르게 적용되는 규칙</div>
+      📝 <b>블로그/클립</b>: 제목 30~40자, 키워드 맨 앞 배치, 본문 키워드 3~5회<br>
+      📹 <b>숏츠</b>: 제목 50자 이내 + #Shorts, 해시태그 1~4개(니치 위주)<br>
+      🎵 <b>틱톡</b>: 해시태그 정확히 3개만 (많을수록 손해, #fyp 금지)<br>
+      📷 <b>인스타 캡션</b>: 해시태그 5개(넓은태그1+카테고리2+지역1+브랜드1)
+    </div>
+    <div class="platform-grid" style="margin-top:12px;">
+      <button class="platform-btn" data-platform="blog">📝 네이버 블로그</button>
+      <button class="platform-btn" data-platform="tiktok">🎵 틱톡</button>
+      <button class="platform-btn" data-platform="shorts">📹 유튜브 숏츠</button>
+      <button class="platform-btn" data-platform="clip">📍 네이버 클립</button>
+      <button class="platform-btn" data-platform="threads">🧵 스레드</button>
+    </div>
+    <div class="error-box" id="platform-error"></div>
+    <div id="platform-results"></div>
+  </div>
+</div>
+
+<script>
+const PLATFORM_LABELS = {
+  blog: '📝 네이버 블로그',
+  tiktok: '🎵 틱톡',
+  shorts: '📹 유튜브 숏츠',
+  clip: '📍 네이버 클립',
+  threads: '🧵 스레드',
+};
+
+let mode = 'template';
+let tone = '친근하게';
+let hookStyle = 'question';
+
+const $ = id => document.getElementById(id);
+
+/* ---------- mode toggle ---------- */
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    mode = btn.dataset.mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b === btn));
+    $('ai-setup').style.display = mode === 'ai' ? 'block' : 'none';
+    $('hookstyle-field').style.display = mode === 'template' ? 'block' : 'none';
+  });
+});
+
+/* ---------- radio rows ---------- */
+document.querySelectorAll('#tone-row button').forEach(btn => btn.addEventListener('click', () => {
+  tone = btn.dataset.v;
+  document.querySelectorAll('#tone-row button').forEach(b => b.classList.toggle('active', b === btn));
+}));
+document.querySelectorAll('#hook-row button').forEach(btn => btn.addEventListener('click', () => {
+  hookStyle = btn.dataset.v;
+  document.querySelectorAll('#hook-row button').forEach(b => b.classList.toggle('active', b === btn));
+}));
+
+/* ---------- api key persistence ---------- */
+const apiKeyInput = $('api-key');
+apiKeyInput.value = localStorage.getItem('gemini_api_key') || '';
+apiKeyInput.addEventListener('input', () => localStorage.setItem('gemini_api_key', apiKeyInput.value));
+$('toggle-key').addEventListener('click', () => {
+  apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
+  $('toggle-key').textContent = apiKeyInput.type === 'password' ? '보기' : '숨기기';
+});
+
+/* ---------- Gemini API call ---------- */
+async function callGemini(prompt){
+  const key = apiKeyInput.value.trim();
+  if (!key) throw new Error('API 키를 먼저 입력해주세요.');
+  let res;
+  try {
+    res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+  } catch (networkErr){
+    throw new Error('AI 서버에 연결할 수 없어요. 지금 Claude 미리보기 화면에서 테스트하고 있다면, 이 화면은 외부 API 요청이 막혀있어서 그래요 — GitHub에 올려서 실제 배포된 사이트(예: sui-studio.vercel.app)에서 다시 시도해주세요. 이미 배포된 사이트라면 인터넷 연결을 확인해주세요.');
+  }
+  if (!res.ok){
+    const errText = await res.text().catch(()=> '');
+    throw new Error(`API 요청이 실패했어요 (${res.status}). API 키가 올바른지 확인해주세요.`);
+  }
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.map(p=>p.text).join('') || '';
+  if (!text) throw new Error('AI가 응답을 만들지 못했어요. 다시 시도해주세요.');
+  return text.trim();
+}
+
+function showError(elId, msg){
+  const el = $(elId);
+  el.textContent = '⚠️ ' + msg;
+  el.classList.add('show');
+}
+function hideError(elId){ $(elId).classList.remove('show'); }
+
+function setLoading(btn, loading, label){
+  btn.disabled = loading;
+  btn.classList.toggle('loading', loading);
+  btn.textContent = loading ? '만드는 중...' : label;
+}
+
+/* =========================================================
+   TEMPLATE MODE — 문구 뱅크
+========================================================= */
+const HOOK_BANK = {
+  question: (topic) => pick([
+    `요즘 ${topic} 때문에 거울 볼 때마다 신경 쓰이시죠?`,
+    `${topic}, 남들은 다 아는데 나만 모르고 있던 거 아닐까요?`,
+    `혹시 ${topic} 때문에 자신감이 떨어진 적 있으세요?`,
+  ]),
+  twist: (topic) => pick([
+    `${topic}, 사실 다들 반대로 하고 계세요`,
+    `${topic} 열심히 할수록 오히려 더 나빠지고 있었다면요?`,
+    `${topic}, 이거 하나 때문에 그동안 노력이 다 헛수고였을 수 있어요`,
+  ]),
+  empathy: (topic) => pick([
+    `${topic} 때문에 스트레스 받으셨죠? 저만 그런 게 아니었어요`,
+    `${topic}, 저도 예전엔 똑같이 고민했어요`,
+    `혼자만 ${topic} 때문에 힘든 거 아니에요, 다들 똑같아요`,
+  ]),
+  number: (topic) => pick([
+    `${topic}, 이 방법 하나면 확 달라져요`,
+    `${topic}, 딱 이거 하나만 바꿔도 결과가 달라져요`,
+    `${topic} 해결하는 데 필요한 건 이것 하나뿐이에요`,
+  ]),
+  warning: (topic) => pick([
+    `${topic}, 이거 모르면 계속 같은 고민 반복하게 돼요`,
+    `${topic} 이대로 두면 나중에 더 손댈 게 많아져요`,
+    `${topic}, 지금 안 바꾸면 남들보다 계속 뒤처져요`,
+  ]),
+};
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function templateScript(topic, audience, tone, hook){
+  const hookLine = HOOK_BANK[hook](topic);
+  const aud = audience ? `${audience} 손님들이 특히 많이 물어보세요.\n` : '';
+  return [
+    `[오프닝]`,
+    hookLine,
+    `이번 영상 보시면 ${topic} 고민, 오늘로 끝내실 수 있어요.`,
+    `[화면: 완성된 결과 클로즈업으로 먼저 보여주기]`,
+    ``,
+    `[문제→해결]`,
+    `${aud}${topic}, 원인은 복잡하지 않아요. 원인 하나만 잡으면 바로 달라져요.`,
+    `[화면: Before 상태 짧게 보여주고 바로 After로 전환]`,
+    ``,
+    `[시술 과정]`,
+    `1. 먼저 현재 상태를 진단하고 어떤 부분이 문제인지 짚어드려요. [화면: 진단하는 손 클로즈업]`,
+    `2. 그 다음 단계별로 시술을 진행해요. [화면: 시술 과정 타임랩스]`,
+    `3. 손님들이 제일 많이 놓치는 부분은 마무리 관리인데, 이 순서를 하나만 바꿔도 유지력이 확 달라져요. [화면: 마무리 케어 장면]`,
+    ``,
+    `[예약 전환]`,
+    `${tone === '전문적으로' ? '전문가로서 확실히 도움드릴 수 있어요.' : '저희가 확실하게 도와드릴게요!'}`,
+    `프로필 링크 눌러서 지금 바로 예약하시거나, 댓글로 편하게 물어보세요.`,
+  ].join('\n');
+}
+
+function templateCaption(topic, script){
+  const firstLine = script.split('\n').find(l => l.trim().length > 0) || topic;
+  return [
+    `${firstLine}`,
+    ``,
+    `${topic}, 이번 릴스에서 확실하게 정리해드렸어요 ✨`,
+    `저장해두고 다음에 또 보러 오세요!`,
+    ``,
+    `📍예약은 프로필 링크에서`,
+    `💬 궁금한 점은 댓글로 남겨주세요`,
+    ``,
+    `#${topic.replace(/\s+/g,'')} #헤어스타일 #미용실추천 #뷰티팁`,
+  ].join('\n');
+}
+
+function templatePlatform(platform, topic, caption){
+  const bodyLines = caption.split('\n').filter(l => l.trim());
+  const core = bodyLines.slice(0, 3).join(' ');
+  const cleanTopic = topic.replace(/\s+/g,'');
+  switch(platform){
+    case 'blog':
+      // 네이버 SEO: 제목 앞부분 키워드, 30~40자 이내, 의도어 포함 / 본문 키워드 3~5회 / 사진 위치 표시 / 태그 5~8개
+      return [
+        `제목: ${topic} 이렇게 관리하는 방법 (후기)`,
+        ``,
+        `안녕하세요, 오늘은 ${topic}에 대해 이야기해볼게요.`,
+        `[사진: 시술 전 모습]`,
+        ``,
+        `많은 분들이 ${topic} 때문에 고민하시는 걸 릴스에서도 다뤘었는데, 여기서 조금 더 자세히 설명드리려고 해요.`,
+        ``,
+        `${core}`,
+        `[사진: 시술 과정]`,
+        ``,
+        `${topic}는 방법만 제대로 알면 확실히 달라져요. 실제로 매장에서도 이 방법으로 많은 분들이 만족하셨어요.`,
+        `[사진: 완성된 결과]`,
+        ``,
+        `궁금한 점 있으시면 언제든 댓글이나 방문 상담으로 문의해주세요.`,
+        ``,
+        `#${cleanTopic} #${cleanTopic}추천 #${cleanTopic}방법 #미용실블로그 #헤어팁 #동네미용실`,
+      ].join('\n');
+    case 'tiktok':
+      // 틱톡 SEO: 해시태그 정확히 3개 (트렌딩1+니치2), #fyp #viral 금지
+      return [
+        `${topic} 이거 실화? 😳`,
+        ``,
+        `${core}`,
+        ``,
+        `저장 필수 ✅ 팔로우하면 더 많은 꿀팁 올려드려요`,
+        ``,
+        `#헤어틱톡 #${cleanTopic} #미용실추천`,
+      ].join('\n');
+    case 'shorts':
+      // 유튜브 쇼츠 SEO: 제목 50자 이내 키워드 앞, #Shorts 포함, 설명 첫 100자 키워드, 태그 1~4개
+      return [
+        `제목: ${topic}, 30초면 이해돼요 #Shorts`,
+        ``,
+        `${topic} 이것만 알면 확실히 달라져요. ${core}`,
+        ``,
+        `구독 누르시면 매주 새로운 ${topic} 꿀팁 올려드려요!`,
+        ``,
+        `#${cleanTopic} #헤어스타일 #Shorts`,
+      ].join('\n');
+    case 'clip':
+      // 네이버 클립 SEO: 제목 앞부분 키워드 + 지역, 30~40자
+      return [
+        `제목: ${topic} 우리동네에서 해결하는 법`,
+        ``,
+        `${topic} 궁금하셨던 분들 주목!`,
+        ``,
+        `${core}`,
+        ``,
+        `우리 동네에서 확인하고 싶으시면 지금 바로 예약해보세요.`,
+        ``,
+        `#${cleanTopic} #네이버클립 #동네미용실`,
+      ].join('\n');
+    case 'threads':
+      return [
+        `오늘 ${topic} 관련 릴스 올렸는데 반응이 좋아서 여기서도 짧게 풀어볼게요.`,
+        ``,
+        `${core}`,
+        ``,
+        `여러분은 어떻게 관리하고 계세요? 댓글로 알려주세요 👀`,
+      ].join('\n');
+    default: return core;
+  }
+}
+
+/* =========================================================
+   AI MODE — 프롬프트 구성
+========================================================= */
+function buildScriptPrompt(){
+  const topic = $('topic').value.trim();
+  const audience = $('audience').value.trim();
+  const notes = $('coaching-notes').value.trim();
+  return [
+    `너는 10년 차 뷰티 콘텐츠 마케터야. 릴스 대본을 진짜로 촬영에 쓸 수 있게, 실제 대사와 실제 화면 지시문으로 써줘. 구조 설명이나 "이런 내용을 넣으세요" 같은 메타 설명문은 절대 쓰지 마. 실제 그 내용 자체를 써야 해.`,
+    ``,
+    `[주제] ${topic}`,
+    audience ? `[타겟 고객] ${audience}` : '',
+    `[톤앤매너] ${tone}`,
+    ``,
+    `[먼저 머릿속으로만 진행하고 출력하지는 말 것 — 욕망 사다리 타기]`,
+    `1. "${topic}"의 표면적 기능/행동은 무엇인가?`,
+    `2. 그것 때문에 사람들이 진짜 원하는 것은 무엇인가? ("왜?"를 3번 반복해서 한두 단계 위 욕망까지 파고들 것)`,
+    `3. 그 욕망을 가장 많은 사람이 공감할 수 있는 넓은 주제로 바꾸면 무엇인가?`,
+    `이 사고 과정 자체는 출력하지 말고, 최종 도달한 욕망만 후킹 문장에 자연스럽게 녹여서 결과만 출력해.`,
+    ``,
+    `[대본은 반드시 이 순서와 내용으로]`,
+    `1. 오프닝(3초): 이 영상을 보면 "어떤 결과를 얻는지 / 어떤 고민이 해결되는지 / 내가 어떻게 달라지는지"가 한눈에 보이는 실제 대사 한두 문장. 뒤이어 [화면: ~] 지시문으로 완성된 결과 모습을 어떻게 보여줄지.`,
+    `2. 문제→해결을 바로 보여주기: 원인 설명부터 늘어놓지 말고, "이게 문제였고, 이렇게 해결됩니다"를 결론부터 먼저 대사로 던질 것.`,
+    `3. 시술/실행 과정: 실제로 어떤 단계를 거치는지 구체적인 시술 과정을 스토리처럼 서술. 각 단계마다 [화면: ~] 지시문 포함. "전문가만 아는 디테일"이나 "사람들이 자주 하는 실수"를 반드시 실제 구체적인 내용으로 하나 넣을 것 (예시 문구가 아니라 진짜 그 실수/디테일이 무엇인지 명시).`,
+    `4. 예약 전환: 자연스럽게 예약/문의로 이어지는 실제 CTA 대사.`,
+    ``,
+    `[반드시 지켜야 할 원칙]`,
+    `- 절대 "○○ 관리법", "○○ 아시나요?" 같은 뻔하고 상투적인 후킹 문장을 쓰지 말 것.`,
+    `- "예를 들어~", "~을 넣어주세요", "~하면 좋아요" 같은 메타 설명문 금지. 실제 대사와 내용 그 자체를 써야 한다.`,
+    `- 영상 하나 = 메시지 하나. 정보가 많아도 한 문장으로 설명되는 메시지 하나만 남긴다.`,
+    `- 말투는 친한 친구에게 설명하듯 자연스럽게.`,
+    notes ? `\n[추가로 참고할 코칭 노하우]\n${notes}` : '',
+    ``,
+    `아래처럼 4개 섹션으로 나눠서, 각 섹션에 실제 대사/내용을 채워서 출력해줘 (사고 과정, 메타 설명 없이 대본 내용만):`,
+    `[오프닝]`,
+    `[문제→해결]`,
+    `[시술 과정]`,
+    `[예약 전환]`,
+  ].filter(Boolean).join('\n');
+}
+
+function buildCaptionPrompt(script){
+  const topic = $('topic').value.trim();
+  return [
+    `너는 인스타그램 릴스 캡션 SEO 전문가야.`,
+    `아래 대본을 바탕으로, 인스타 릴스에 올릴 캡션(설명글)을 ${tone} 톤으로 작성해줘.`,
+    `[SEO 규칙] 캡션 첫 문장에 핵심 키워드 "${topic}"를 자연스럽게 넣어줘 (릴스 알고리즘이 캡션 텍스트로 주제를 판단해).`,
+    `이모지를 적절히 섞고, 마지막에는 예약 유도 문구를 넣어줘.`,
+    `[해시태그 규칙] 정확히 5개: 넓은 태그 1개 + 카테고리 태그 2개 + 지역/상황 태그 1개 + 브랜드 태그 1개로 구성해줘. 단순 인기 태그 나열은 피하고 롱테일(구체적인) 키워드로 만들어줘.`,
+    `다른 설명 없이 캡션 내용만 출력해줘.`,
+    ``,
+    `[주제] ${topic}`,
+    `[대본]`,
+    script,
+  ].join('\n');
+}
+
+const PLATFORM_PROMPTS = {
+  blog: (caption, topic) => `너는 네이버 블로그 SEO 전문가야. 아래 인스타 릴스 캡션을 바탕으로 네이버 블로그 포스팅을 써줘.
+[제목 규칙] 핵심 키워드 "${topic}"를 제목 맨 앞에 배치하고, 전체 30~40자 이내(모바일에서 35자 넘으면 잘림)로. "가격/방법/추천/후기" 중 검색 의도에 맞는 단어를 하나 포함해줘.
+[본문 규칙] 도입부 첫 3줄 안에 키워드를 자연스럽게 넣고, 소제목 2~3개로 구조를 나눠줘. 키워드는 본문 전체에서 3~5회 자연스럽게 반복(과도한 반복 금지). 백과사전식 나열이 아니라 실제 경험/사례처럼 써줘. 마지막에 예약 유도 문구를 넣어줘.
+[사진 안내] 본문 중간에 "[사진: ~ 장면]" 형식으로 직접 촬영 사진을 넣을 위치를 3곳 이상 표시해줘 (네이버는 직접 촬영 사진 6장 이상을 좋아해).
+[태그] 마지막 줄에 관련 태그 5~8개.
+출력 형식(다른 설명 없이):
+제목: (여기에 제목)
+
+(본문)
+
+#태그1 #태그2 ...
+
+[캡션]\n${caption}`,
+
+  tiktok: (caption, topic) => `너는 틱톡 SEO 전문가야. 아래 인스타 릴스 캡션을 틱톡 스타일(더 짧고 트렌디하고 임팩트 있는 말투, 첫 문장에 핵심 키워드 "${topic}" 포함)로 다시 써줘.
+[해시태그 규칙] 정확히 3개만. #fyp #viral 같은 범용 태그는 이제 효과가 없으니 절대 쓰지 말고, 트렌딩 태그 1개 + 니치(구체적) 키워드 태그 2개로 구성해줘.
+다른 설명 없이 캡션과 해시태그만 출력해줘.
+
+[캡션]\n${caption}`,
+
+  shorts: (caption, topic) => `너는 유튜브 쇼츠 SEO 전문가야. 아래 인스타 릴스 캡션을 바탕으로 유튜브 쇼츠용 제목과 설명을 써줘.
+[제목 규칙] 핵심 키워드 "${topic}"를 앞쪽에 배치하고 50자 이내로. 제목이나 설명 어딘가에 #Shorts를 포함해줘.
+[설명 규칙] 설명의 첫 100자 안에 키워드를 넣고, 구독 유도 문구를 포함해줘.
+[해시태그 규칙] 1~4개만, 트렌딩 태그보다 검색량 있는 니치 키워드 태그를 우선해줘.
+출력 형식(다른 설명 없이):
+제목: (여기에 제목)
+
+(설명 본문)
+
+#태그1 #태그2 ...
+
+[캡션]\n${caption}`,
+
+  clip: (caption, topic) => `너는 네이버 클립 SEO 전문가야. 아래 인스타 릴스 캡션을 바탕으로 네이버 클립용 제목과 설명을 써줘.
+[제목 규칙] 핵심 키워드 "${topic}"를 앞쪽에 배치하고 30~40자 이내로. 지역/동네 키워드를 포함해줘 (예: "우리동네", 실제 지역명이 있다면 그것을 활용).
+[본문 규칙] 검색으로 들어오는 사람을 기준으로 키워드를 자연스럽게 반복하고, 방문/예약 유도 문구로 마무리해줘.
+출력 형식(다른 설명 없이):
+제목: (여기에 제목)
+
+(본문)
+
+#태그1 #태그2 ...
+
+[캡션]\n${caption}`,
+
+  threads: (caption, topic) => `너는 스레드(Threads) 콘텐츠 전문가야. 아래 인스타 릴스 캡션을 스레드 스타일(더 캐주얼하고 대화체, 짧은 문단, 마지막에 질문으로 댓글 유도)로 다시 써줘. 해시태그는 넣지 마. 다른 설명 없이 본문만 출력해줘.\n\n[캡션]\n${caption}`,
+};
+
+/* =========================================================
+   STEP 1 — 릴스 기획
+========================================================= */
+$('gen-script').addEventListener('click', async () => {
+  const btn = $('gen-script');
+  hideError('script-error');
+  const topic = $('topic').value.trim();
+  if (!topic){ showError('script-error', '먼저 릴스 주제를 입력해주세요.'); return; }
+
+  setLoading(btn, true, '기획 만들기');
+  try{
+    let result;
+    if (mode === 'ai'){
+      result = await callGemini(buildScriptPrompt());
+    } else {
+      result = templateScript(topic, $('audience').value.trim(), tone, hookStyle);
+    }
+    $('script-text').value = result;
+    $('script-result').style.display = 'block';
+    resetGate();
+  } catch(err){
+    showError('script-error', err.message);
+  } finally {
+    setLoading(btn, false, '기획 만들기');
+  }
+});
+$('copy-script').addEventListener('click', () => copyText($('script-text').value, 'copy-script'));
+$('regen-script').addEventListener('click', () => $('gen-script').click());
+
+/* ---------- 체크리스트 게이트: 3개 다 체크해야 2단계 잠금 해제 ---------- */
+function resetGate(){
+  document.querySelectorAll('.gate-check').forEach(cb => cb.checked = false);
+  lockStep('step2-wrap', true);
+}
+function lockStep(id, locked){
+  const el = $(id);
+  el.style.opacity = locked ? '0.4' : '1';
+  el.style.pointerEvents = locked ? 'none' : 'auto';
+}
+document.querySelectorAll('.gate-check').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const allChecked = [...document.querySelectorAll('.gate-check')].every(c => c.checked);
+    lockStep('step2-wrap', !allChecked);
+    if (allChecked) $('step2-sub').textContent = '위 대본을 바탕으로 인스타/릴스에 올릴 캡션을 만들어요.';
+  });
+});
+
+/* =========================================================
+   STEP 2 — 캡션
+========================================================= */
+$('gen-caption').addEventListener('click', async () => {
+  const btn = $('gen-caption');
+  hideError('caption-error');
+  const script = $('script-text').value.trim();
+  const topic = $('topic').value.trim();
+  if (!script){ showError('caption-error', '먼저 1단계에서 릴스 기획을 만들어주세요.'); return; }
+
+  setLoading(btn, true, '캡션 만들기');
+  try{
+    let result;
+    if (mode === 'ai'){
+      result = await callGemini(buildCaptionPrompt(script));
+    } else {
+      result = templateCaption(topic, script);
+    }
+    $('caption-text').value = result;
+    $('caption-result').style.display = 'block';
+    lockStep('step3-wrap', false);
+  } catch(err){
+    showError('caption-error', err.message);
+  } finally {
+    setLoading(btn, false, '캡션 만들기');
+  }
+});
+$('copy-caption').addEventListener('click', () => copyText($('caption-text').value, 'copy-caption'));
+
+/* =========================================================
+   STEP 3 — 플랫폼 변환
+========================================================= */
+document.querySelectorAll('.platform-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    hideError('platform-error');
+    const caption = $('caption-text').value.trim();
+    const topic = $('topic').value.trim();
+    if (!caption){ showError('platform-error', '먼저 2단계에서 캡션을 만들어주세요.'); return; }
+
+    const platform = btn.dataset.platform;
+    const original = btn.textContent;
+    btn.textContent = '만드는 중...'; btn.disabled = true;
+    try{
+      let result;
+      if (mode === 'ai'){
+        result = await callGemini(PLATFORM_PROMPTS[platform](caption, topic));
+      } else {
+        result = templatePlatform(platform, topic, caption);
+      }
+      renderPlatformResult(platform, result);
+      btn.classList.add('done');
+    } catch(err){
+      showError('platform-error', err.message);
+    } finally {
+      btn.textContent = original; btn.disabled = false;
+    }
+  });
+});
+
+function renderPlatformResult(platform, text){
+  let box = document.getElementById('platform-result-' + platform);
+  if (!box){
+    box = document.createElement('div');
+    box.className = 'platform-result';
+    box.id = 'platform-result-' + platform;
+    box.innerHTML = `
+      <div class="tag">${PLATFORM_LABELS[platform]}</div>
+      <div class="result-box">
+        <textarea rows="6"></textarea>
+        <div class="result-actions"><button class="mini-link">복사</button></div>
+      </div>
+    `;
+    document.getElementById('platform-results').appendChild(box);
+    box.querySelector('.mini-link').addEventListener('click', (e) => {
+      copyTextInline(box.querySelector('textarea').value, e.target);
+    });
+  }
+  box.querySelector('textarea').value = text;
+  box.classList.add('show');
+}
+
+function cleanForCopy(text){
+  return text
+    .replace(/\[[^\]]*\]/g, '')        // [후킹 - 0~3초], [화면: ~] 등 대괄호 전체 제거
+    .replace(/^제목:\s*/gm, '')         // "제목:" 라벨 제거 (제목은 필요하면 따로 복사)
+    .replace(/[ \t]+/g, ' ')            // 중복 공백 정리
+    .replace(/ *\n */g, '\n')           // 줄 앞뒤 공백 정리
+    .replace(/\n{3,}/g, '\n\n')         // 빈 줄 3개 이상 → 2개로
+    .trim();
+}
+
+function copyText(text, btnId){
+  navigator.clipboard.writeText(cleanForCopy(text)).then(() => {
+    const btn = $(btnId);
+    const original = btn.textContent;
+    btn.textContent = '복사됨!'; btn.classList.add('copy-ok');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('copy-ok'); }, 1500);
+  });
+}
+function copyTextInline(text, btn){
+  navigator.clipboard.writeText(cleanForCopy(text)).then(() => {
+    const original = btn.textContent;
+    btn.textContent = '복사됨!'; btn.classList.add('copy-ok');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('copy-ok'); }, 1500);
+  });
+}
+</script>
+</body>
+</html>
