@@ -4,131 +4,206 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>카드뉴스 편집기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Black+Han+Sans&family=Do+Hyeon&family=Jua&family=Gothic+A1:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700;800&family=Gaegu:wght@400;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   @font-face {
     font-family: 'Pretendard';
     src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2') format('woff2-variations');
     font-weight: 45 920;
   }
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
-
   :root{
     --bg:#1c1417; --surface:#251b1f; --surface-2:#2e2226;
     --cream:#f6efe9; --cream-dim:#cbb9ae;
     --mauve:#b76e79; --mauve-soft:#d8a2a9;
     --gold:#c9a227; --line: rgba(246,239,233,0.14);
+    --cover:#c9a227; --closing:#7fae82;
+    --stage-ratio: 4/5;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0; background:var(--bg); color:var(--cream);
-    font-family:'Pretendard', sans-serif;
-    min-height:100vh;
-  }
+  body{ margin:0; background:var(--bg); color:var(--cream); font-family:'Pretendard', sans-serif; min-height:100vh; padding-bottom:60px; }
   header{
     padding:18px 20px; border-bottom:1px solid var(--line);
     display:flex; align-items:center; justify-content:space-between;
-    position:sticky; top:0; background:rgba(28,20,23,0.9); backdrop-filter:blur(6px);
-    z-index:10;
+    position:sticky; top:0; background:rgba(28,20,23,0.94); backdrop-filter:blur(6px); z-index:30;
   }
   header a{ color:var(--cream-dim); text-decoration:none; font-size:13px; }
-  header h1{
-    font-family:'Fraunces', serif; font-weight:500; font-size:16px;
+  header h1{ font-family:'Fraunces', serif; font-weight:500; font-size:16px; }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:22px 16px 0; }
+
+  .step-title{ font-family:'Fraunces', serif; font-weight:500; font-size:20px; margin-bottom:6px; }
+  .step-sub{ font-size:13px; color:var(--cream-dim); margin-bottom:22px; line-height:1.6; }
+
+  .step-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .step-tab{ padding:9px 14px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--cream-dim); font-size:13px; cursor:pointer; }
+  .step-tab.active{ border-color:var(--gold); color:var(--cream); }
+  .step-tab-add{ padding:9px 14px; border-radius:10px; border:1px dashed var(--line); background:none; color:var(--cream-dim); font-size:13px; cursor:pointer; }
+
+  .step-card{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px; margin-bottom:20px; }
+  .step-card-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .step-card-head .num{ font-family:'Fraunces', serif; font-size:15px; display:flex; align-items:center; gap:8px; }
+  .step-card-head .num .tag{ font-size:11px; padding:2px 8px; border-radius:20px; font-weight:700; }
+  .step-card-head .nav{ display:flex; gap:8px; }
+  .step-card-head .nav button{ width:30px; height:30px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--cream-dim); cursor:pointer; font-size:13px; flex:none; }
+  .step-card-head .nav button:hover{ color:var(--cream); border-color:var(--mauve); }
+  .step-card-head .nav button#step-del{ width:auto; padding:0 12px; white-space:nowrap; font-size:12px; }
+  .guide-box{ font-size:12.5px; color:var(--gold); background:rgba(201,162,39,0.08); border:1px solid rgba(201,162,39,0.25); border-radius:9px; padding:10px 12px; margin-bottom:14px; line-height:1.5; }
+
+  .field{ margin-bottom:12px; }
+  .field:last-child{ margin-bottom:0; }
+  .field label{ display:block; font-size:12px; color:var(--cream-dim); margin-bottom:6px; }
+  .field textarea, .field select, .field input[type=text]{
+    width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
+    color:var(--cream); padding:9px 10px; font-family:inherit; font-size:13.5px; resize:vertical;
   }
 
-  .layout{
-    display:flex; flex-direction:column;
-    max-width:1100px; margin:0 auto;
-  }
-  @media(min-width:900px){
-    .layout{ flex-direction:row; align-items:flex-start; gap:28px; padding:28px 20px; }
+  .step1-actions{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:30px; flex-wrap:wrap; }
+  .bulk-paste-box{ background:var(--surface); border:1px solid var(--gold); border-radius:14px; padding:16px; margin-bottom:18px; }
+  .bulk-paste-box textarea{ width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; color:var(--cream); padding:10px; font-family:inherit; font-size:13px; line-height:1.6; resize:vertical; }
+  .btn-outline{ padding:11px 16px; border-radius:10px; border:1px solid var(--line); background:none; color:var(--cream-dim); font-size:13px; cursor:pointer; }
+  .btn-outline:hover{ color:var(--cream); border-color:var(--mauve); }
+  .btn-go{ padding:13px 22px; border-radius:11px; border:none; background:var(--gold); color:#1c1417; font-weight:700; font-size:14px; cursor:pointer; }
+  .btn-go:hover{ filter:brightness(1.06); }
+
+  .step2-back{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .step2-back button.link{ background:none; border:none; color:var(--cream-dim); font-size:13px; cursor:pointer; padding:0; }
+  .step2-back button.link:hover{ color:var(--gold); }
+
+  .global-panel{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin-bottom:16px; }
+  .global-panel .gp-title{ font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--mauve-soft); font-weight:700; }
+  .gp-title-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .gp-toggle-btn{ flex:none; font-size:12px; padding:6px 12px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--cream-dim); cursor:pointer; }
+  .gp-toggle-btn:hover{ color:var(--gold); border-color:var(--gold); }
+  .gp-toggle-btn.active{ border-color:var(--gold); color:var(--gold); background:rgba(201,162,39,0.12); }
+  .gp-body-flex{ display:flex; gap:22px; align-items:flex-start; margin-top:14px; }
+  .gp-controls{ flex:1; min-width:0; }
+  .gp-preview-col{ flex:none; width:260px; position:sticky; top:80px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .gp-preview-label{ font-size:10.5px; color:var(--cream-dim); text-align:center; }
+  .gp-stage{ width:100%; max-width:260px; }
+  @media(max-width:640px){ .gp-body-flex{ flex-direction:column; } .gp-preview-col{ width:100%; max-width:280px; margin:0 auto; position:static; } }
+  .gp-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:16px 20px; margin-bottom:14px; }
+  @media(max-width:760px){ .gp-grid{ grid-template-columns:1fr 1fr; } }
+  .gp-field label{ display:flex; justify-content:space-between; font-size:12px; color:var(--cream-dim); margin-bottom:7px; }
+  .gp-field label .v{ color:var(--gold); }
+  .gp-field input[type=range]{ width:100%; }
+  .gp-field select{ width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; color:var(--cream); padding:8px 10px; font-family:inherit; font-size:13px; }
+  .gp-row2{ display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:space-between; padding-top:12px; border-top:1px solid var(--line); }
+  .gp-align{ display:flex; gap:6px; }
+  .gp-align button{ padding:7px 12px; border-radius:7px; border:1px solid var(--line); background:var(--surface-2); color:var(--cream-dim); font-size:12px; cursor:pointer; }
+  .gp-align button.active{ border-color:var(--gold); color:var(--gold); }
+  .gp-toggle{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--cream-dim); }
+  .switch{ position:relative; width:38px; height:22px; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .switch .slider{ position:absolute; inset:0; background:var(--surface-2); border:1px solid var(--line); border-radius:20px; cursor:pointer; transition:.15s; }
+  .switch .slider::before{ content:''; position:absolute; width:16px; height:16px; left:2px; top:2px; background:var(--cream-dim); border-radius:50%; transition:.15s; }
+  .switch input:checked + .slider{ background:rgba(201,162,39,0.3); border-color:var(--gold); }
+  .switch input:checked + .slider::before{ transform:translateX(16px); background:var(--gold); }
+  .zoom-note{ font-size:11px; color:var(--cream-dim); line-height:1.5; margin:0; }
+
+  .toolbar{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
+  .toolbar button{ padding:9px 14px; border-radius:9px; font-size:13px; cursor:pointer; border:1px solid var(--line); background:var(--surface); color:var(--cream-dim); }
+  .toolbar button:hover{ color:var(--cream); border-color:var(--mauve); }
+  .toolbar .zip-btn{ background:var(--gold); color:#1c1417; font-weight:700; border:none; margin-left:auto; }
+  .toolbar .zip-btn:hover{ filter:brightness(1.06); }
+  .size-select-wrap{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--cream-dim); }
+  .size-select-wrap select{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:9px;
+    color:var(--cream); padding:9px 10px; font-family:inherit; font-size:12.5px; cursor:pointer;
   }
 
-  /* ---- canvas stage ---- */
-  .stage-col{ flex:1; display:flex; flex-direction:column; align-items:center; padding:24px 16px 8px; }
-  .stage{
-    position:relative; width:100%; max-width:380px; aspect-ratio:4/5;
-    background:#3a2c30; border-radius:14px; overflow:hidden;
-    box-shadow:0 20px 50px rgba(0,0,0,0.45);
-    border:1px solid var(--line);
-    background-size:cover; background-position:center;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .stage .placeholder{ color:var(--cream-dim); font-size:13px; text-align:center; padding:20px;}
-  .layer{
-    position:absolute; cursor:grab; padding:6px 10px;
-    line-height:1.35; white-space:pre-wrap; word-break:keep-all;
-    user-select:none; touch-action:none;
-  }
-  .layer.selected{ outline:1.5px dashed var(--gold); outline-offset:4px; }
-  .layer:active{ cursor:grabbing; }
-
-  /* thumbnails */
-  .thumbs{ display:flex; gap:8px; margin-top:16px; overflow-x:auto; max-width:380px; padding-bottom:4px; }
-  .thumb{
-    flex:none; width:46px; height:57px; border-radius:6px; background-size:cover; background-position:center;
-    background-color:var(--surface-2); border:1.5px solid var(--line); cursor:pointer; position:relative;
-  }
-  .thumb.active{ border-color:var(--mauve); }
-  .thumb .n{ position:absolute; bottom:2px; right:3px; font-size:9px; color:var(--cream-dim); }
-  .thumb-add{
-    flex:none; width:46px; height:57px; border-radius:6px; border:1.5px dashed var(--line);
-    display:flex; align-items:center; justify-content:center; color:var(--cream-dim); cursor:pointer; font-size:18px; background:none;
-  }
-
-  .slide-actions{ display:flex; gap:8px; margin-top:14px; }
-  .btn-mini{
-    font-size:12px; padding:7px 12px; border-radius:8px; border:1px solid var(--line);
-    background:var(--surface); color:var(--cream-dim); cursor:pointer;
-  }
-  .btn-mini:hover{ color:var(--cream); border-color:var(--mauve); }
-
-  /* ---- controls panel ---- */
-  .panel{
-    width:100%; max-width:420px; margin:0 auto; padding:8px 16px 40px;
-  }
-  @media(min-width:900px){ .panel{ max-width:340px; margin:0; padding:24px 0; } }
-
-  .group{
+  /* quick-jump thumb row */
+  .quickjump{
+    display:flex; gap:8px; overflow-x:auto; padding:10px; margin-bottom:24px;
     background:var(--surface); border:1px solid var(--line); border-radius:14px;
-    padding:16px; margin-bottom:14px;
+    position:sticky; top:64px; z-index:15;
   }
-  .group h3{
-    font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--cream-dim);
-    margin:0 0 12px; font-weight:600;
+  .qj-thumb{ flex:none; width:48px; height:60px; border-radius:6px; background-size:cover; background-position:center; background-color:var(--surface-2); border:1.5px solid var(--line); cursor:pointer; position:relative; }
+  .qj-thumb .tag{ position:absolute; top:2px; left:2px; font-size:7.5px; padding:1px 3px; border-radius:3px; color:#111; font-weight:700; }
+  .qj-add{ flex:none; width:48px; height:60px; border-radius:6px; border:1.5px dashed var(--line); display:flex; align-items:center; justify-content:center; color:var(--cream-dim); cursor:pointer; font-size:16px; background:none; }
+
+  /* slide blocks stacked vertically */
+  .slide-block{ background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:20px; margin-bottom:20px; scroll-margin-top:130px; }
+  .block-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
+  .block-head .title{ font-family:'Fraunces', serif; font-size:15px; display:flex; align-items:center; gap:8px; }
+  .block-head .title .tag{ font-size:10.5px; padding:2px 8px; border-radius:20px; font-weight:700; }
+  .block-head .actions{ display:flex; gap:6px; flex-wrap:wrap; }
+  .btn-mini{ font-size:12px; padding:7px 12px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--cream-dim); cursor:pointer; }
+  .btn-mini:hover{ color:var(--cream); border-color:var(--mauve); }
+  .btn-mini.primary{ background:var(--gold); color:#1c1417; border:none; font-weight:700; }
+
+  .block-grid{ display:grid; grid-template-columns: 280px 1fr; gap:22px; align-items:start; }
+  @media(max-width:680px){ .block-grid{ grid-template-columns:1fr; } }
+  .stage-wrap{ position:sticky; top:80px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+
+  .nudge-grid{ display:flex; flex-direction:row; flex-wrap:wrap; gap:14px; }
+  .nudge-row{ display:flex; align-items:center; gap:6px; }
+  .nudge-row .nudge-label{ font-size:11.5px; color:var(--cream-dim); width:32px; flex:none; }
+  .nudge-row button.nudge-btn{ width:26px; height:26px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--cream-dim); cursor:pointer; font-size:11px; flex:none; }
+  .nudge-row button.nudge-btn:hover{ color:var(--cream); border-color:var(--mauve); }
+  .nudge-row input.nudge-input{ width:46px; text-align:center; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--cream); padding:5px 2px; font-family:inherit; font-size:12px; }
+  .nudge-row .nudge-pct{ font-size:11px; color:var(--cream-dim); flex:none; margin-left:-4px; }
+  .nudge-row button.nudge-reset{ font-size:10.5px; padding:5px 8px; border-radius:6px; border:1px solid var(--line); background:none; color:var(--cream-dim); cursor:pointer; flex:none; margin-left:auto; }
+  .nudge-row button.nudge-reset:hover{ color:var(--gold); border-color:var(--gold); }
+
+  .stage{
+    position:relative; width:100%; max-width:300px; aspect-ratio: var(--stage-ratio, 4/5); margin:0 auto;
+    border-radius:14px; overflow:hidden; box-shadow:0 16px 40px rgba(0,0,0,0.4);
+    border:1px solid var(--line); background:#3a2c30; cursor:crosshair;
   }
-  .row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-  .row:last-child{ margin-bottom:0; }
-  .row label{ font-size:13px; color:var(--cream-dim); flex:none; width:64px; }
-  .row input[type=text], .row textarea{
-    flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
-    color:var(--cream); padding:8px 10px; font-family:inherit; font-size:14px; resize:vertical;
+  .stage .bg{ position:absolute; inset:0; background-size:cover; background-position:center; }
+  .stage .overlay{ position:absolute; inset:0; background:#000; pointer-events:none; }
+  .stage .placeholder{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--cream-dim); font-size:12.5px; text-align:center; padding:20px; }
+  .layer{ position:absolute; cursor:grab; padding:4px 8px; white-space:pre-wrap; word-break:keep-all; user-select:none; touch-action:none; max-width:90%; }
+  .layer.selected{ outline:1.5px dashed var(--gold); outline-offset:3px; }
+  .layer .resize-handle{
+    position:absolute; bottom:-9px; right:-9px; width:18px; height:18px; border-radius:50%;
+    background:var(--gold); border:2px solid #1c1417; cursor:nwse-resize;
+    box-shadow:0 1px 4px rgba(0,0,0,0.4); touch-action:none;
   }
-  .row input[type=range]{ flex:1; }
-  .row input[type=color]{ width:38px; height:32px; border:none; border-radius:6px; background:none; padding:0; }
-  .row select{
-    flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
-    color:var(--cream); padding:8px 10px; font-size:13px;
+  .layer:not(.selected) .resize-handle{ opacity:0; }
+  .layer:hover .resize-handle, .layer.selected .resize-handle{ opacity:1; }
+  .layer:active{ cursor:grabbing; }
+  .pagenum{
+    position:absolute; bottom:14px; right:16px;
+    font-family:'Pretendard', sans-serif; font-size:11px; font-weight:600;
+    letter-spacing:.16em; text-transform:uppercase;
+    color:rgba(255,255,255,0.92);
+    text-shadow:0 1px 3px rgba(0,0,0,0.5);
   }
-  .swatches{ display:flex; gap:8px; }
-  .swatch{
-    width:26px; height:26px; border-radius:50%; border:2px solid rgba(255,255,255,0.15); cursor:pointer;
-  }
-  .file-btn{
-    display:block; text-align:center; padding:10px; border-radius:9px;
-    background:linear-gradient(160deg, var(--mauve), #995a63); color:#fff;
-    font-size:13px; font-weight:600; cursor:pointer; border:none; width:100%;
-  }
-  .add-text-btn{
-    width:100%; padding:10px; border-radius:9px; border:1px solid var(--line);
-    background:var(--surface-2); color:var(--cream); font-size:13px; cursor:pointer; margin-top:8px;
-  }
-  .download-btn{
-    width:100%; padding:13px; border-radius:11px; border:none;
-    background:var(--gold); color:#1c1417; font-weight:700; font-size:14px; cursor:pointer;
-    margin-top:6px;
-  }
-  .download-btn:hover{ filter:brightness(1.06); }
-  .hint{ font-size:11.5px; color:var(--cream-dim); margin-top:8px; line-height:1.6; }
+
+  .card-layout-picker{ display:flex; gap:8px; margin-bottom:14px; }
+  .clp{ flex:1; padding:8px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--cream-dim); font-size:10.5px; cursor:pointer; text-align:center; }
+  .clp:hover{ border-color:var(--mauve); }
+  .clp.active{ border-color:var(--gold); color:var(--gold); }
+
+  .panels{ display:flex; flex-direction:column; gap:12px; }
+  .panel{ background:var(--surface-2); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; cursor:pointer; }
+  .panel-head .tag2{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--mauve-soft); font-weight:700; }
+  .panel-head .sub{ font-size:11.5px; color:var(--cream-dim); margin-top:2px; }
+  .panel-head .chev{ color:var(--cream-dim); font-size:12px; transition:transform .15s; }
+  .panel.collapsed .chev{ transform:rotate(-90deg); }
+  .panel-body{ padding:0 14px 14px; }
+  .panel.collapsed .panel-body{ display:none; }
+
+  .ptabs{ display:flex; gap:6px; margin-bottom:14px; background:var(--surface-2); padding:4px; border-radius:10px; }
+  .ptab{ flex:1; padding:9px 6px; border-radius:8px; border:none; background:none; color:var(--cream-dim); font-size:12.5px; cursor:pointer; font-weight:600; }
+  .ptab.active{ background:var(--gold); color:#1c1417; }
+  .tab-pane{ background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:14px; }
+
+  .size-row{ display:flex; align-items:center; gap:8px; }
+  .size-row input[type=range]{ flex:1; }
+  .size-row .val{ font-size:12px; color:var(--cream-dim); width:42px; text-align:right; }
+  .swatches{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .swatch{ width:22px; height:22px; border-radius:50%; border:2px solid rgba(255,255,255,0.15); cursor:pointer; }
+  .swatch.active{ outline:2px solid var(--gold); outline-offset:1px; }
+  .btn-group{ display:flex; gap:6px; }
+  .btn-group button{ flex:1; padding:7px 0; border-radius:7px; border:1px solid var(--line); background:var(--bg); color:var(--cream-dim); font-size:12px; cursor:pointer; }
+  .btn-group button.active{ border-color:var(--gold); color:var(--gold); }
+  .italic-btn-inline i{ font-style:italic; }
 </style>
 </head>
 <body>
@@ -138,359 +213,1110 @@
   <a href="index.html">← 홈으로</a>
 </header>
 
-<div class="layout">
-  <div class="stage-col">
-    <div class="stage" id="stage">
-      <div class="placeholder" id="placeholder">사진을 업로드하면<br>여기에 표시됩니다</div>
+<div class="wrap">
+
+  <!-- ============ STEP 1 ============ -->
+  <div id="step1">
+    <div class="step-title">1단계: 카드 문구 입력</div>
+    <p class="step-sub">1번 카드는 <b style="color:#c9a227">표지</b>, 마지막 카드는 <b style="color:#7fae82">마무리</b>로 자동 표시돼요.<br>카드마다 제목과 내용을 순서대로 입력하세요.</p>
+
+    <button class="btn-outline" id="bulk-paste-toggle" style="margin-bottom:16px;">📋 문구 한 번에 붙여넣어서 자동으로 카드 나누기</button>
+
+    <div class="bulk-paste-box" id="bulk-paste-box" style="display:none;">
+      <p class="step-sub" style="margin-bottom:10px;">카드 사이는 <b>빈 줄</b>로 구분해주세요. 각 문단의 <b>첫 줄이 제목</b>, 나머지가 내용이 돼요.</p>
+      <textarea id="bulk-paste-text" rows="10" placeholder="오늘의 헤어스타일&#10;매력적인 스타일링의 비결을 확인해보세요&#10;&#10;디테일한 시술 과정&#10;정성스럽게 준비했어요&#10;&#10;예약 및 방문 문의&#10;지금 바로 예약하세요"></textarea>
+      <p id="bulk-paste-warn" style="display:none; color:var(--mauve-soft); font-size:12.5px; margin-top:8px;"></p>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button class="btn-outline" id="bulk-paste-cancel">취소</button>
+        <button class="btn-go" id="bulk-paste-apply">✂️ 자동으로 카드 나누기</button>
+      </div>
     </div>
 
-    <div class="thumbs" id="thumbs"></div>
+    <div class="step-tabs" id="step-tabs"></div>
 
-    <div class="slide-actions">
-      <button class="btn-mini" id="dup-slide">이 슬라이드 복제</button>
-      <button class="btn-mini" id="del-slide">삭제</button>
+    <div class="step-card">
+      <div class="step-card-head">
+        <div class="num" id="step-card-num"></div>
+        <div class="nav">
+          <button id="step-prev">‹</button>
+          <button id="step-next">›</button>
+          <button id="step-del">삭제</button>
+        </div>
+      </div>
+      <div class="guide-box" id="guide-box"></div>
+      <div class="field"><label>제목</label><textarea id="s1-headline" rows="2"></textarea></div>
+      <div class="field"><label>내용</label><textarea id="s1-body" rows="4"></textarea></div>
+    </div>
+
+    <div class="step1-actions">
+      <button class="btn-outline" id="step-add-card">+ 카드 추가</button>
+      <button class="btn-go" id="go-step2">이대로 디자인 편집하기 →</button>
     </div>
   </div>
 
-  <div class="panel">
-    <div class="group">
-      <h3>배경 사진</h3>
-      <label class="file-btn">
-        사진 업로드
-        <input type="file" id="img-input" accept="image/*" style="display:none">
-      </label>
-      <p class="hint">권장 비율 4:5 (인스타 세로형). 슬라이드마다 다른 사진을 넣을 수 있어요.</p>
+  <!-- ============ STEP 2 ============ -->
+  <div id="step2" style="display:none">
+
+    <div class="step2-back">
+      <button class="link" id="back-step1">← 문구 수정으로 돌아가기</button>
+      <button class="link" id="reset-all">🔄 전체 초기화</button>
     </div>
 
-    <div class="group">
-      <h3>텍스트</h3>
-      <button class="add-text-btn" id="add-text">+ 텍스트 추가</button>
-      <div id="text-editor" style="display:none; margin-top:12px;">
-        <div class="row">
-          <label>내용</label>
-          <textarea id="txt-content" rows="2"></textarea>
-        </div>
-        <div class="row">
-          <label>크기</label>
-          <input type="range" id="txt-size" min="14" max="72" value="28">
-        </div>
-        <div class="row">
-          <label>색상</label>
-          <input type="color" id="txt-color" value="#f6efe9">
-          <div class="swatches">
-            <div class="swatch" style="background:#f6efe9" data-c="#f6efe9"></div>
-            <div class="swatch" style="background:#c9a227" data-c="#c9a227"></div>
-            <div class="swatch" style="background:#b76e79" data-c="#b76e79"></div>
-            <div class="swatch" style="background:#1c1417" data-c="#1c1417"></div>
+    <div class="global-panel">
+      <div class="gp-title-row">
+        <div class="gp-title">전체 카드 일괄 제어 · 움직이면 모든 카드에 바로 반영돼요</div>
+        <button class="gp-toggle-btn" id="gp-toggle-btn">▴ 접기</button>
+      </div>
+      <div class="gp-body-flex" id="gp-body-flex" style="display:flex;">
+        <div class="gp-controls">
+          <div class="gp-grid">
+            <div class="gp-field"><label>제목 크기 <span class="v" id="gp-hsize-val">44px</span></label><input type="range" id="gp-hsize" min="10" max="120" value="44"></div>
+            <div class="gp-field"><label>본문 크기 <span class="v" id="gp-bsize-val">22px</span></label><input type="range" id="gp-bsize" min="8" max="70" value="22"></div>
+            <div class="gp-field"><label>배경 어둡기 <span class="v" id="gp-dim-val">40%</span></label><input type="range" id="gp-dim" min="0" max="85" value="40"></div>
+            <div class="gp-field"><label>그림자 진하기 <span class="v" id="gp-shadow-val">0%</span></label><input type="range" id="gp-shadow" min="0" max="200" value="0"></div>
+            <div class="gp-field"><label>서체</label><select id="gp-font"></select></div>
+            <div class="gp-field">
+              <label>레이아웃</label>
+              <select id="gp-layout">
+                <option value="">— 선택 —</option>
+                <option value="center">중앙 강조형</option>
+                <option value="topbottom">상하 분리형</option>
+                <option value="bottomleft">좌측 하단 강조형</option>
+                <option value="typo">타이포 강조형</option>
+              </select>
+            </div>
+          </div>
+          <div class="gp-row2">
+            <div class="gp-align" id="gp-align">
+              <button data-a="left">왼쪽 정렬</button><button data-a="center">가운데 정렬</button><button data-a="right">오른쪽 정렬</button>
+            </div>
+            <label class="gp-toggle">
+              <span class="switch"><input type="checkbox" id="gp-pagenum"><span class="slider"></span></span>
+              페이지 번호 표시
+            </label>
+          </div>
+          <div class="gp-row2" style="border-top:1px solid var(--line); margin-top:12px; padding-top:12px;">
+            <div class="gp-align" id="gp-weight">
+              <button data-w="400">보통</button><button data-w="700">굵게</button><button data-w="900">아주 굵게</button><button id="gp-italic"><i>기울임</i></button>
+            </div>
+          </div>
+          <div class="gp-row2" style="margin-top:10px;">
+            <div class="gp-field" style="flex:1;">
+              <label>외곽선(획) 굵기 <span class="v" id="gp-stroke-val">0%</span></label>
+              <input type="range" id="gp-stroke" min="0" max="200" value="0">
+            </div>
+            <input type="color" id="gp-strokecolor" value="#000000" style="width:36px;height:32px;border:none;padding:0;border-radius:6px;">
+          </div>
+          <div class="gp-row2" style="margin-top:10px;">
+            <label style="font-size:12px; color:var(--cream-dim); flex:none; width:70px;">글자 색상</label>
+            <div class="swatches" id="gp-color-swatches" style="flex:1;"></div>
+          </div>
+          <div class="gp-row2" style="border-top:1px solid var(--line); margin-top:12px; padding-top:12px;">
+            <div class="nudge-grid" style="flex:1; min-width:220px;">
+              <div class="nudge-row">
+                <span class="nudge-label">전체 상하</span>
+                <button class="nudge-btn" id="gp-ny-dec">▲</button>
+                <button class="nudge-btn" id="gp-ny-inc">▼</button>
+                <button class="nudge-reset" id="gp-ny-reset">가운데로 초기화</button>
+              </div>
+              <div class="nudge-row">
+                <span class="nudge-label">전체 좌우</span>
+                <button class="nudge-btn" id="gp-nx-dec">◀</button>
+                <button class="nudge-btn" id="gp-nx-inc">▶</button>
+                <button class="nudge-reset" id="gp-nx-reset">가운데로 초기화</button>
+              </div>
+            </div>
+          </div>
+          <div class="gp-row2" style="margin-top:10px;">
+            <label class="btn-mini primary" style="cursor:pointer; width:100%; text-align:center;">
+              📷 전체 카드에 사진 한번에 업로드 (1장=전체 동일, 여러 장=순서대로)
+              <input type="file" id="gp-bulk-img" accept="image/*" multiple style="display:none">
+            </label>
           </div>
         </div>
-        <div class="row">
-          <label>굵기</label>
-          <select id="txt-weight">
-            <option value="400">보통</option>
-            <option value="700" selected>굵게</option>
-            <option value="900">아주 굵게</option>
-          </select>
+
+        <div class="gp-preview-col">
+          <div class="gp-preview-label" id="gp-preview-label">1번 카드 미리보기</div>
+          <div class="stage gp-stage" id="gp-preview-stage">
+            <div class="bg" id="gp-preview-bg"></div>
+            <div class="overlay" id="gp-preview-overlay"></div>
+          </div>
         </div>
-        <div class="row">
-          <label>정렬</label>
-          <select id="txt-align">
-            <option value="left">왼쪽</option>
-            <option value="center" selected>가운데</option>
-            <option value="right">오른쪽</option>
-          </select>
-        </div>
-        <button class="btn-mini" id="del-text" style="width:100%; margin-top:4px;">이 텍스트 삭제</button>
       </div>
-      <p class="hint" id="text-hint">텍스트 상자를 드래그해서 원하는 위치로 옮길 수 있어요.</p>
     </div>
 
-    <button class="download-btn" id="download-btn">이 슬라이드 PNG로 저장</button>
-    <button class="btn-mini" id="download-all" style="width:100%; margin-top:8px;">전체 슬라이드 한번에 저장</button>
+    <div class="toolbar">
+      <label class="size-select-wrap">
+        <span>출력 사이즈</span>
+        <select id="output-size">
+          <option value="ig_card" selected>인스타 카드뉴스 (4:5) · 1080×1350</option>
+          <option value="ig_square">인스타 정사각형 (1:1) · 1080×1080</option>
+          <option value="ig_story">인스타/카톡 스토리 (9:16) · 1080×1920</option>
+          <option value="naver_thumb">네이버 블로그 썸네일 (1:1) · 800×800</option>
+          <option value="naver_cover">네이버 블로그 커버 (16:9) · 1200×675</option>
+          <option value="fb_share">페이스북/카톡 공유 · 1200×630</option>
+        </select>
+      </label>
+      <button id="add-slide">+ 카드 추가</button>
+      <button class="zip-btn" id="zip-btn">전체 카드 이미지 다운로드 (ZIP)</button>
+    </div>
+
+    <div class="quickjump" id="quickjump"></div>
+
+    <div id="slides-container"></div>
+
   </div>
 </div>
 
 <script>
-// ---------- state ----------
-let slides = [ makeSlide() ];
-let currentSlide = 0;
-let selectedLayerId = null;
+const FONTS = [
+  {v:"'Noto Sans KR', sans-serif", n:'노토 산스 (기본, 깔끔)'},
+  {v:"'Pretendard', sans-serif", n:'프리텐다드 (모던)'},
+  {v:"'Black Han Sans', sans-serif", n:'블랙 한 산스 (임팩트)'},
+  {v:"'Do Hyeon', sans-serif", n:'도현체 (굵고 선명)'},
+  {v:"'Jua', sans-serif", n:'주아체 (귀엽고 통통)'},
+  {v:"'Gothic A1', sans-serif", n:'고딕 A1 (심플)'},
+  {v:"'Nanum Myeongjo', serif", n:'나눔명조 (고급스러운 세리프)'},
+  {v:"'Gaegu', cursive", n:'개구체 (손글씨 느낌)'},
+];
+const SIZE_PRESETS = {
+  ig_card:     { w:1080, h:1350 },
+  ig_square:   { w:1080, h:1080 },
+  ig_story:    { w:1080, h:1920 },
+  naver_thumb: { w:800,  h:800 },
+  naver_cover: { w:1200, h:675 },
+  fb_share:    { w:1200, h:630 },
+};
+let currentOutputSize = SIZE_PRESETS.ig_card;
 
-function makeSlide(){
-  return { id: crypto.randomUUID(), image: null, layers: [] };
+const LAYOUT_PRESETS = [
+  { key:'center',     label:'중앙 강조형',      apply:{ hAlign:'center', hX:50, hY:40, hSize:46, bAlign:'center', bX:50, bY:57, bSize:22 } },
+  { key:'topbottom',  label:'상하 분리형',      apply:{ hAlign:'center', hX:50, hY:18, hSize:36, bAlign:'center', bX:50, bY:85, bSize:20 } },
+  { key:'bottomleft', label:'좌측 하단 강조형', apply:{ hAlign:'left',   hX:8,  hY:72, hSize:40, bAlign:'left',   bX:8,  bY:88, bSize:18 } },
+  { key:'typo',       label:'타이포 강조형',    apply:{ hAlign:'left',   hX:8,  hY:44, hSize:58, bAlign:'left',   bX:8,  bY:80, bSize:16 } },
+];
+const COLORS = ['#ffffff','#f6efe9','#1c1417','#2c2c2c','#c9a227','#f2c14e','#b76e79','#d8a2a9','#e6d5b8','#7c9cb7','#7fae82','#4a3728'];
+const STROKE_COLORS = ['#000000','#ffffff','#1c1417','#c9a227'];
+
+function defaultXForAlign(align){ return align === 'left' ? 8 : (align === 'right' ? 92 : 50); }
+
+function typeForIndex(i, total){
+  if (i === 0) return 'cover';
+  if (total > 1 && i === total-1) return 'closing';
+  return 'body';
 }
-function makeLayer(){
+const TYPE_INFO = {
+  cover:   { label:'표지',   color:'#c9a227', guide:'손님이 스크롤을 멈추게 할 한 줄이에요. 궁금증이나 공감 가는 문장이 좋아요.' },
+  body:    { label:'본문',   color:'#7c9cb7', guide:'이 카드 하나에는 정보 하나만 담아보세요. 너무 많이 넣으면 오히려 안 읽혀요.' },
+  closing: { label:'마무리', color:'#7fae82', guide:'예약 방법, 연락처, 감사 인사로 마무리하세요. 손님이 다음에 뭘 해야 할지 알려주는 카드예요.' },
+};
+
+function makeLayer(overrides){
+  return Object.assign({ text:'', font:FONTS[0].v, size:44, color:'#ffffff', weight:700, align:'center', x:50, y:42, shadow:0, italic:false, stroke:0, strokeColor:'#000000' }, overrides);
+}
+function makeSlide(){
   return {
     id: crypto.randomUUID(),
-    text: '문구를 입력하세요',
-    x: 50, y: 50, // percent
-    size: 28, color: '#f6efe9', weight: 700, align: 'center'
+    image:null, zoom:100, focusX:50, focusY:50, dim:40,
+    headline: makeLayer({ text:'', size:44, weight:800, y:42 }),
+    body: makeLayer({ text:'', size:22, weight:400, y:56 }),
+    selectedLayer: 'headline',
   };
 }
 
-const stage = document.getElementById('stage');
-const placeholder = document.getElementById('placeholder');
-const thumbsEl = document.getElementById('thumbs');
+let slides = [ makeSlide(), makeSlide(), makeSlide(), makeSlide(), makeSlide(), makeSlide() ];
+let currentSlide = 0;
+let showPageNum = false;
 
-function currentSlideObj(){ return slides[currentSlide]; }
-function selectedLayer(){
-  const s = currentSlideObj();
-  return s.layers.find(l => l.id === selectedLayerId) || null;
+function cur(){ return slides[currentSlide]; }
+
+/* =====================================================
+   STEP 1
+===================================================== */
+function step1CardLabel(i){
+  const t = typeForIndex(i, slides.length);
+  const suffix = t === 'cover' ? ' (표지)' : (t === 'closing' ? ' (마무리)' : '');
+  return `${i+1}번 카드${suffix}`;
 }
 
-// ---------- render ----------
-function render(){
-  const s = currentSlideObj();
-  stage.style.backgroundImage = s.image ? `url(${s.image})` : 'none';
-  placeholder.style.display = s.image ? 'none' : 'block';
+function renderStep1(){
+  const tabsEl = document.getElementById('step-tabs');
+  tabsEl.innerHTML = '';
+  slides.forEach((s, i) => {
+    const t = typeForIndex(i, slides.length);
+    const tab = document.createElement('div');
+    tab.className = 'step-tab' + (i === currentSlide ? ' active' : '');
+    tab.textContent = `${i+1}번` + (t !== 'body' ? ` ${TYPE_INFO[t].label}` : '');
+    tab.addEventListener('click', () => { currentSlide = i; renderStep1(); });
+    tabsEl.appendChild(tab);
+  });
+  const addTab = document.createElement('button');
+  addTab.className = 'step-tab-add'; addTab.textContent = '+ 추가';
+  addTab.addEventListener('click', () => { insertCardAfterCurrent(); renderStep1(); });
+  tabsEl.appendChild(addTab);
 
-  // clear existing layer DOM (keep placeholder)
+  const t = typeForIndex(currentSlide, slides.length);
+  document.getElementById('step-card-num').innerHTML = `${step1CardLabel(currentSlide)} <span class="tag" style="background:${TYPE_INFO[t].color};color:#1c1417">${TYPE_INFO[t].label}</span>`;
+  document.getElementById('s1-headline').value = cur().headline.text;
+  document.getElementById('s1-body').value = cur().body.text;
+  document.getElementById('guide-box').textContent = '💡 ' + TYPE_INFO[t].guide;
+}
+
+document.getElementById('s1-headline').addEventListener('input', e => { cur().headline.text = e.target.value; renderStep1(); });
+document.getElementById('s1-body').addEventListener('input', e => { cur().body.text = e.target.value; });
+document.getElementById('step-prev').addEventListener('click', () => { currentSlide = (currentSlide - 1 + slides.length) % slides.length; renderStep1(); });
+document.getElementById('step-next').addEventListener('click', () => { currentSlide = (currentSlide + 1) % slides.length; renderStep1(); });
+
+function insertCardAfterCurrent(){
+  slides.splice(currentSlide+1, 0, makeSlide());
+  currentSlide += 1;
+}
+document.getElementById('step-add-card').addEventListener('click', () => { insertCardAfterCurrent(); renderStep1(); });
+
+/* ---- 일괄 붙여넣기: 빈 줄로 구분된 문단을 카드로 자동 변환 ---- */
+document.getElementById('bulk-paste-toggle').addEventListener('click', () => {
+  const box = document.getElementById('bulk-paste-box');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('bulk-paste-cancel').addEventListener('click', () => {
+  document.getElementById('bulk-paste-box').style.display = 'none';
+});
+document.getElementById('bulk-paste-apply').addEventListener('click', () => {
+  const raw = document.getElementById('bulk-paste-text').value;
+  const paragraphs = raw.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
+  const warnEl = document.getElementById('bulk-paste-warn');
+  if (paragraphs.length === 0){
+    warnEl.textContent = '⚠️ 붙여넣은 내용이 없어요. 카드 사이는 빈 줄로 구분해주세요.';
+    warnEl.style.display = 'block';
+    return;
+  }
+
+  slides = paragraphs.map(par => {
+    const lines = par.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const headline = lines[0] || '';
+    const body = lines.slice(1).join('\n');
+    const s = makeSlide();
+    s.headline.text = headline;
+    s.body.text = body;
+    return s;
+  });
+  currentSlide = 0;
+  document.getElementById('bulk-paste-box').style.display = 'none';
+  document.getElementById('bulk-paste-text').value = '';
+  renderStep1();
+
+  const toggleBtn = document.getElementById('bulk-paste-toggle');
+  const original = toggleBtn.textContent;
+  toggleBtn.textContent = `✅ ${paragraphs.length}장의 카드로 나눴어요!`;
+  setTimeout(() => toggleBtn.textContent = original, 2200);
+});
+document.getElementById('step-del').addEventListener('click', () => {
+  if (slides.length === 1){ slides = [makeSlide()]; currentSlide = 0; renderStep1(); return; }
+  slides.splice(currentSlide, 1); currentSlide = Math.max(0, currentSlide-1); renderStep1();
+});
+
+document.getElementById('go-step2').addEventListener('click', () => {
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'block';
+  buildAllBlocks();
+});
+document.getElementById('gp-toggle-btn').addEventListener('click', (e) => {
+  const body = document.getElementById('gp-body-flex');
+  const btn = e.currentTarget;
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? 'flex' : 'none';
+  btn.textContent = isHidden ? '▴ 접기' : '▾ 펼치기';
+});
+
+document.getElementById('back-step1').addEventListener('click', () => {
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step1').style.display = 'block';
+  renderStep1();
+});
+document.getElementById('reset-all').addEventListener('click', (e) => {
+  const btn = e.currentTarget;
+  if (btn.dataset.armed !== 'true'){
+    btn.dataset.armed = 'true';
+    const original = btn.textContent;
+    btn.textContent = '⚠️ 한번 더 누르면 초기화돼요';
+    setTimeout(() => { btn.dataset.armed = 'false'; btn.textContent = original; }, 3000);
+    return;
+  }
+  btn.dataset.armed = 'false';
+  btn.textContent = '🔄 전체 초기화';
+  slides.forEach(s => {
+    s.image = null; s.zoom = 100; s.focusX = 50; s.focusY = 50; s.dim = 40;
+    Object.assign(s.headline, { font:FONTS[0].v, size:44, color:'#ffffff', weight:800, align:'center', x:50, y:42, shadow:0 });
+    Object.assign(s.body,     { font:FONTS[0].v, size:22, color:'#ffffff', weight:400, align:'center', x:50, y:56, shadow:0 });
+  });
+  buildAllBlocks();
+});
+
+/* =====================================================
+   STEP 2 — vertically stacked blocks
+===================================================== */
+function fillFontSelect(sel){ sel.innerHTML = FONTS.map(f => `<option value="${f.v}">${f.n}</option>`).join(''); }
+fillFontSelect(document.getElementById('gp-font'));
+
+function blockHTML(slide, i){
+  const t = typeForIndex(i, slides.length);
+  return `
+  <div class="slide-block" id="block-${i}" data-index="${i}">
+    <div class="block-head">
+      <div class="title">${i+1}번 카드 <span class="tag" style="background:${TYPE_INFO[t].color};color:#1c1417">${TYPE_INFO[t].label}</span></div>
+      <div class="actions">
+        <button class="btn-mini" data-act="save">PNG 저장</button>
+        <button class="btn-mini" data-act="dup">복제</button>
+        <button class="btn-mini" data-act="addafter">뒤에 추가</button>
+        <button class="btn-mini" data-act="del">삭제</button>
+      </div>
+    </div>
+    <div class="block-grid">
+      <div class="stage-wrap">
+        <div class="stage" id="stage-${i}">
+          <div class="bg" id="stage-bg-${i}"></div>
+          <div class="overlay" id="stage-overlay-${i}"></div>
+          <div class="placeholder" id="placeholder-${i}">사진을 업로드하면<br>여기에 표시됩니다</div>
+        </div>
+        <button class="btn-mini primary" data-act="save" style="width:100%; max-width:280px;">📥 이 카드 PNG로 저장</button>
+      </div>
+      <div class="panels">
+        <div class="ptabs" id="ptabs-${i}">
+          <button class="ptab active" data-tab="bg">🖼 사진</button>
+          <button class="ptab" data-tab="headline">T 제목</button>
+          <button class="ptab" data-tab="body">T 본문 내용</button>
+        </div>
+
+        <div class="tab-pane" data-pane="bg" id="pane-bg-${i}">
+          <div class="field"><label class="btn-mini primary" style="display:block; text-align:center; cursor:pointer;">📷 사진 업로드<input type="file" id="img-input-${i}" accept="image/*" style="display:none"></label></div>
+          <div class="field"><label>확대 (줌) — <span id="zoom-val-${i}"></span></label><input type="range" id="img-zoom-${i}" min="100" max="220" style="width:100%"></div>
+          <div class="field"><label>어둡기 — <span id="dim-val-${i}"></span></label><input type="range" id="img-dim-${i}" min="0" max="85" style="width:100%"></div>
+          <p class="zoom-note">사진을 클릭하면 그 지점이 중심이 되도록 초점이 이동해요.</p>
+        </div>
+
+        <div class="tab-pane" data-pane="headline" id="pane-headline-${i}" style="display:none">
+          <div class="field"><label>내용</label><textarea id="h-text-${i}" rows="2"></textarea></div>
+          <div class="field"><label>서체</label><select id="h-font-${i}"></select></div>
+          <div class="field"><label>글자 크기</label><div class="size-row"><input type="range" id="h-size-${i}" min="10" max="120"><span class="val" id="h-size-val-${i}"></span></div></div>
+          <div class="field"><label>색상</label><div class="swatches" id="h-color-${i}"></div></div>
+          <div class="field"><label>그림자</label><div class="size-row"><input type="range" id="h-shadow-${i}" min="0" max="200"><span class="val" id="h-shadow-val-${i}"></span></div></div>
+          <div class="field">
+            <label>굵기 · 기울임</label>
+            <div class="btn-group" id="h-weight-${i}">
+              <button data-w="400">보통</button><button data-w="700">굵게</button><button data-w="900">아주 굵게</button><button class="italic-btn-inline" id="h-italic-${i}" title="기울임"><i>기울임</i></button>
+            </div>
+          </div>
+          <div class="field">
+            <label>외곽선(획) — <span id="h-stroke-val-${i}"></span></label>
+            <div class="size-row"><input type="range" id="h-stroke-${i}" min="0" max="200"><input type="color" id="h-strokecolor-${i}" style="width:32px;height:30px;border:none;padding:0;border-radius:6px;"></div>
+          </div>
+          <div class="field"><label>정렬</label><div class="btn-group" id="h-align-${i}"><button data-a="left">왼쪽</button><button data-a="center">가운데</button><button data-a="right">오른쪽</button></div></div>
+          <div class="field">
+            <label>세부 위치 조정</label>
+            <div class="nudge-grid">
+              <div class="nudge-row">
+                <span class="nudge-label">상하</span>
+                <button class="nudge-btn" data-axis="y" data-dir="-1">▲</button>
+                <input type="number" class="nudge-input" id="h-ny-${i}" min="0" max="100">
+                <span class="nudge-pct">%</span>
+                <button class="nudge-btn" data-axis="y" data-dir="1">▼</button>
+                <button class="nudge-reset" data-axis="y">초기화</button>
+              </div>
+              <div class="nudge-row">
+                <span class="nudge-label">좌우</span>
+                <button class="nudge-btn" data-axis="x" data-dir="-1">◀</button>
+                <input type="number" class="nudge-input" id="h-nx-${i}" min="0" max="100">
+                <span class="nudge-pct">%</span>
+                <button class="nudge-btn" data-axis="x" data-dir="1">▶</button>
+                <button class="nudge-reset" data-axis="x">초기화</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane" data-pane="body" id="pane-body-${i}" style="display:none">
+          <div class="field"><label>내용</label><textarea id="b-text-${i}" rows="3"></textarea></div>
+          <div class="field"><label>서체</label><select id="b-font-${i}"></select></div>
+          <div class="field"><label>글자 크기</label><div class="size-row"><input type="range" id="b-size-${i}" min="8" max="70"><span class="val" id="b-size-val-${i}"></span></div></div>
+          <div class="field"><label>색상</label><div class="swatches" id="b-color-${i}"></div></div>
+          <div class="field"><label>그림자</label><div class="size-row"><input type="range" id="b-shadow-${i}" min="0" max="200"><span class="val" id="b-shadow-val-${i}"></span></div></div>
+          <div class="field">
+            <label>굵기 · 기울임</label>
+            <div class="btn-group" id="b-weight-${i}">
+              <button data-w="400">보통</button><button data-w="700">굵게</button><button data-w="900">아주 굵게</button><button class="italic-btn-inline" id="b-italic-${i}" title="기울임"><i>기울임</i></button>
+            </div>
+          </div>
+          <div class="field">
+            <label>외곽선(획) — <span id="b-stroke-val-${i}"></span></label>
+            <div class="size-row"><input type="range" id="b-stroke-${i}" min="0" max="200"><input type="color" id="b-strokecolor-${i}" style="width:32px;height:30px;border:none;padding:0;border-radius:6px;"></div>
+          </div>
+          <div class="field"><label>정렬</label><div class="btn-group" id="b-align-${i}"><button data-a="left">왼쪽</button><button data-a="center">가운데</button><button data-a="right">오른쪽</button></div></div>
+          <div class="field">
+            <label>세부 위치 조정</label>
+            <div class="nudge-grid">
+              <div class="nudge-row">
+                <span class="nudge-label">상하</span>
+                <button class="nudge-btn" data-axis="y" data-dir="-1">▲</button>
+                <input type="number" class="nudge-input" id="b-ny-${i}" min="0" max="100">
+                <span class="nudge-pct">%</span>
+                <button class="nudge-btn" data-axis="y" data-dir="1">▼</button>
+                <button class="nudge-reset" data-axis="y">초기화</button>
+              </div>
+              <div class="nudge-row">
+                <span class="nudge-label">좌우</span>
+                <button class="nudge-btn" data-axis="x" data-dir="-1">◀</button>
+                <input type="number" class="nudge-input" id="b-nx-${i}" min="0" max="100">
+                <span class="nudge-pct">%</span>
+                <button class="nudge-btn" data-axis="x" data-dir="1">▶</button>
+                <button class="nudge-reset" data-axis="x">초기화</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildAllBlocks(){
+  const container = document.getElementById('slides-container');
+  container.innerHTML = slides.map((s, i) => blockHTML(s, i)).join('');
+  slides.forEach((s, i) => wireBlock(i));
+  buildQuickJump();
+  updateGpPreview();
+}
+
+function updateGpPreview(){
+  const s = slides[0]; if (!s) return;
+  const stage = document.getElementById('gp-preview-stage');
+  const bg = document.getElementById('gp-preview-bg');
+  const overlay = document.getElementById('gp-preview-overlay');
+  const t = typeForIndex(0, slides.length);
+  document.getElementById('gp-preview-label').textContent = `1번 카드 (${TYPE_INFO[t].label}) 미리보기`;
+
+  bg.style.backgroundImage = s.image ? `url(${s.image})` : 'none';
+  bg.style.backgroundSize = s.image ? `${s.zoom}%` : 'cover';
+  bg.style.backgroundPosition = `${s.focusX}% ${s.focusY}%`;
+  overlay.style.opacity = s.dim/100;
+
   [...stage.querySelectorAll('.layer')].forEach(el => el.remove());
-
-  s.layers.forEach(layer => {
+  ['headline','body'].forEach(key => {
+    const layer = s[key];
     const el = document.createElement('div');
-    el.className = 'layer' + (layer.id === selectedLayerId ? ' selected' : '');
-    el.style.left = layer.x + '%';
+    el.className = 'layer';
     el.style.top = layer.y + '%';
-    el.style.transform = 'translate(-50%,-50%)';
-    el.style.fontSize = layer.size + 'px';
+    el.style.left = layer.x + '%';
+    el.style.fontFamily = layer.font;
+    el.style.fontSize = (layer.size*0.68*0.75) + 'px';
     el.style.color = layer.color;
     el.style.fontWeight = layer.weight;
     el.style.textAlign = layer.align;
-    el.style.maxWidth = '90%';
+    el.style.fontStyle = layer.italic ? 'italic' : 'normal';
+    const shOp = Math.min(layer.shadow,100)/100*0.9;
+    const shBlur = (4 + layer.shadow*0.12) * 0.75;
+    const shOffset = (2 + layer.shadow*0.02) * 0.75;
+    el.style.textShadow = layer.shadow > 0 ? `0 ${shOffset.toFixed(1)}px ${shBlur.toFixed(1)}px rgba(0,0,0,${shOp.toFixed(2)})` : 'none';
+    el.style.webkitTextStroke = layer.stroke > 0 ? `${(layer.stroke/100*3.2).toFixed(1)}px ${layer.strokeColor}` : '0';
+    el.style.paintOrder = 'stroke fill';
+    el.style.maxWidth = '92%';
+    el.style.padding = '0';
+    el.style.cursor = 'grab';
+    if (layer.align === 'center') el.style.transform = 'translate(-50%,-50%)';
+    else if (layer.align === 'left') el.style.transform = 'translate(0,-50%)';
+    else el.style.transform = 'translate(-100%,-50%)';
     el.textContent = layer.text;
-    el.dataset.id = layer.id;
     stage.appendChild(el);
-    attachDrag(el, layer);
-    el.addEventListener('pointerdown', () => selectLayer(layer.id));
+    attachGpPreviewDrag(el, layer, stage, key);
   });
-
-  renderThumbs();
-  renderTextEditor();
 }
 
-function renderThumbs(){
-  thumbsEl.innerHTML = '';
-  slides.forEach((s, i) => {
-    const t = document.createElement('div');
-    t.className = 'thumb' + (i === currentSlide ? ' active' : '');
-    if (s.image) t.style.backgroundImage = `url(${s.image})`;
-    t.innerHTML = `<span class="n">${i+1}</span>`;
-    t.addEventListener('click', () => { currentSlide = i; selectedLayerId = null; render(); });
-    thumbsEl.appendChild(t);
-  });
-  const addBtn = document.createElement('button');
-  addBtn.className = 'thumb-add';
-  addBtn.textContent = '+';
-  addBtn.addEventListener('click', () => {
-    slides.push(makeSlide());
-    currentSlide = slides.length - 1;
-    selectedLayerId = null;
-    render();
-  });
-  thumbsEl.appendChild(addBtn);
-}
-
-function renderTextEditor(){
-  const editor = document.getElementById('text-editor');
-  const hint = document.getElementById('text-hint');
-  const layer = selectedLayer();
-  if (!layer){ editor.style.display = 'none'; hint.style.display = 'block'; return; }
-  editor.style.display = 'block';
-  hint.style.display = 'none';
-  document.getElementById('txt-content').value = layer.text;
-  document.getElementById('txt-size').value = layer.size;
-  document.getElementById('txt-color').value = layer.color;
-  document.getElementById('txt-weight').value = layer.weight;
-  document.getElementById('txt-align').value = layer.align;
-}
-
-function selectLayer(id){ selectedLayerId = id; render(); }
-
-// ---------- drag ----------
-function attachDrag(el, layer){
+function attachGpPreviewDrag(el, layer, stage, key){
   let dragging = false, startX, startY, startLx, startLy;
   el.addEventListener('pointerdown', (e) => {
-    dragging = true;
-    el.setPointerCapture(e.pointerId);
-    startX = e.clientX; startY = e.clientY;
-    startLx = layer.x; startLy = layer.y;
+    dragging = true; el.setPointerCapture(e.pointerId); e.stopPropagation();
+    startX = e.clientX; startY = e.clientY; startLx = layer.x; startLy = layer.y;
   });
   el.addEventListener('pointermove', (e) => {
     if (!dragging) return;
     const rect = stage.getBoundingClientRect();
-    const dx = (e.clientX - startX) / rect.width * 100;
-    const dy = (e.clientY - startY) / rect.height * 100;
-    layer.x = Math.min(96, Math.max(4, startLx + dx));
-    layer.y = Math.min(96, Math.max(4, startLy + dy));
-    el.style.left = layer.x + '%';
+    const dx = (e.clientX-startX)/rect.width*100;
+    const dy = (e.clientY-startY)/rect.height*100;
+    layer.x = Math.min(97, Math.max(3, startLx+dx));
+    layer.y = Math.min(97, Math.max(3, startLy+dy));
+    el.style.left = layer.x+'%'; el.style.top = layer.y+'%';
+  });
+  el.addEventListener('pointerup', () => {
+    if (!dragging) return;
+    dragging = false;
+    updateBlockStage(0); syncBlockControls(0);
+  });
+}
+
+function buildQuickJump(){
+  const qj = document.getElementById('quickjump');
+  qj.innerHTML = '';
+  slides.forEach((s, i) => {
+    const t = document.createElement('div');
+    t.className = 'qj-thumb';
+    if (s.image) t.style.backgroundImage = `url(${s.image})`;
+    const type = typeForIndex(i, slides.length);
+    t.innerHTML = `<span class="tag" style="background:${TYPE_INFO[type].color}">${i+1}</span>`;
+    t.addEventListener('click', () => document.getElementById('block-'+i).scrollIntoView({behavior:'smooth', block:'start'}));
+    qj.appendChild(t);
+  });
+  const add = document.createElement('button');
+  add.className = 'qj-add'; add.textContent = '+';
+  add.addEventListener('click', () => { slides.push(makeSlide()); buildAllBlocks(); requestAnimationFrame(()=>document.getElementById('block-'+(slides.length-1)).scrollIntoView({behavior:'smooth'})); });
+  qj.appendChild(add);
+}
+
+function switchTab(i, tabKey, fromLayerClick){
+  document.querySelectorAll(`#ptabs-${i} .ptab`).forEach(b => b.classList.toggle('active', b.dataset.tab === tabKey));
+  document.querySelectorAll(`#block-${i} .tab-pane`).forEach(pane => {
+    pane.style.display = pane.dataset.pane === tabKey ? 'block' : 'none';
+  });
+  if (tabKey === 'headline' || tabKey === 'body'){
+    slides[i].selectedLayer = tabKey;
+    if (fromLayerClick){
+      // 드래그 중 DOM이 재생성되면 끊기므로, 클릭만 했을 땐 선택 표시만 가볍게 갈아준다
+      document.querySelectorAll(`#stage-${i} .layer`).forEach(el => el.classList.toggle('selected', el.dataset.layerKey === tabKey));
+    } else {
+      updateBlockStage(i);
+    }
+  }
+}
+
+function wireBlock(i){
+  const slide = slides[i];
+  const stage = document.getElementById('stage-'+i);
+
+  fillFontSelect(document.getElementById('h-font-'+i));
+  fillFontSelect(document.getElementById('b-font-'+i));
+  [['h','headline'], ['b','body']].forEach(([p]) => {
+    const c = document.getElementById(p+'-color-'+i);
+    c.innerHTML = COLORS.map(col => `<div class="swatch" data-c="${col}" style="background:${col}"></div>`).join('')
+      + `<input type="color" class="custom-color" style="width:26px;height:26px;border:none;background:none;padding:0;">`;
+  });
+
+  updateBlockStage(i);
+  syncBlockControls(i);
+
+  // layer text/style bindings
+  [['h','headline'], ['b','body']].forEach(([p, key]) => {
+    document.getElementById(p+'-text-'+i).addEventListener('input', e => { slides[i][key].text = e.target.value; updateBlockStage(i); });
+    document.getElementById(p+'-font-'+i).addEventListener('change', e => { slides[i][key].font = e.target.value; updateBlockStage(i); });
+    document.getElementById(p+'-size-'+i).addEventListener('input', e => {
+      const layer = slides[i][key];
+      const other = key === 'headline' ? slides[i].body : slides[i].headline;
+      const ratio = other.size / layer.size;
+      const newSize = +e.target.value;
+      layer.size = newSize;
+      other.size = Math.min(120, Math.max(8, Math.round(newSize * ratio)));
+      document.getElementById(p+'-size-val-'+i).textContent = newSize + 'px';
+      updateBlockStage(i);
+      syncBlockControls(i);
+    });
+    document.getElementById(p+'-shadow-'+i).addEventListener('input', e => {
+      slides[i][key].shadow = +e.target.value;
+      document.getElementById(p+'-shadow-val-'+i).textContent = e.target.value + '%';
+      updateBlockStage(i);
+    });
+    document.querySelectorAll(`#${p}-color-${i} .swatch`).forEach(sw => sw.addEventListener('click', () => { slides[i][key].color = sw.dataset.c; updateBlockStage(i); syncBlockControls(i); }));
+    document.querySelector(`#${p}-color-${i} .custom-color`).addEventListener('input', e => { slides[i][key].color = e.target.value; updateBlockStage(i); });
+    document.querySelectorAll(`#${p}-weight-${i} button[data-w]`).forEach(btn => btn.addEventListener('click', () => { slides[i][key].weight = +btn.dataset.w; updateBlockStage(i); syncBlockControls(i); }));
+    document.querySelectorAll(`#${p}-align-${i} button`).forEach(btn => btn.addEventListener('click', () => { slides[i][key].align = btn.dataset.a; slides[i][key].x = defaultXForAlign(btn.dataset.a); updateBlockStage(i); syncBlockControls(i); }));
+
+    document.getElementById(p+'-italic-'+i).addEventListener('click', () => {
+      slides[i][key].italic = !slides[i][key].italic;
+      updateBlockStage(i); syncBlockControls(i);
+    });
+    document.getElementById(p+'-stroke-'+i).addEventListener('input', e => {
+      slides[i][key].stroke = +e.target.value;
+      document.getElementById(p+'-stroke-val-'+i).textContent = e.target.value + '%';
+      updateBlockStage(i);
+    });
+    document.getElementById(p+'-strokecolor-'+i).addEventListener('input', e => {
+      slides[i][key].strokeColor = e.target.value;
+      updateBlockStage(i);
+    });
+
+    // 세부 위치 조정 (nudge)
+    const nxInput = document.getElementById(p+'-nx-'+i);
+    const nyInput = document.getElementById(p+'-ny-'+i);
+    nxInput.addEventListener('change', e => { slides[i][key].x = Math.min(100, Math.max(0, +e.target.value)); updateBlockStage(i); });
+    nyInput.addEventListener('change', e => { slides[i][key].y = Math.min(100, Math.max(0, +e.target.value)); updateBlockStage(i); });
+    document.querySelectorAll(`#pane-${key==='headline'?'headline':'body'}-${i} .nudge-btn`).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const axis = btn.dataset.axis, dir = +btn.dataset.dir;
+        slides[i][key][axis] = Math.min(100, Math.max(0, slides[i][key][axis] + dir*2));
+        updateBlockStage(i); syncBlockControls(i);
+      });
+    });
+    document.querySelectorAll(`#pane-${key==='headline'?'headline':'body'}-${i} .nudge-reset`).forEach(btn => {
+      btn.addEventListener('click', () => {
+        slides[i][key][btn.dataset.axis] = 50;
+        updateBlockStage(i); syncBlockControls(i);
+      });
+    });
+  });
+
+  // 탭 전환 (사진 / 제목 / 본문 내용)
+  document.querySelectorAll(`#ptabs-${i} .ptab`).forEach(tabBtn => {
+    tabBtn.addEventListener('click', () => switchTab(i, tabBtn.dataset.tab));
+  });
+
+  document.getElementById('img-input-'+i).addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { slides[i].image = ev.target.result; updateBlockStage(i); buildQuickJump(); };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('img-zoom-'+i).addEventListener('input', e => { slides[i].zoom = +e.target.value; document.getElementById('zoom-val-'+i).textContent = e.target.value+'%'; updateBlockStage(i); });
+  document.getElementById('img-dim-'+i).addEventListener('input', e => { slides[i].dim = +e.target.value; document.getElementById('dim-val-'+i).textContent = e.target.value+'%'; updateBlockStage(i); });
+
+  stage.addEventListener('click', e => {
+    if (e.target.closest('.layer')) return;
+    if (!slides[i].image) return;
+    const rect = stage.getBoundingClientRect();
+    slides[i].focusX = Math.round((e.clientX-rect.left)/rect.width*100);
+    slides[i].focusY = Math.round((e.clientY-rect.top)/rect.height*100);
+    updateBlockStage(i);
+  });
+
+  document.querySelectorAll(`#block-${i} [data-act="save"]`).forEach(btn => btn.addEventListener('click', async () => {
+    const canvas = await slideToCanvas(slides[i], i, slides.length, currentOutputSize.w, currentOutputSize.h);
+    downloadCanvas(canvas, `카드뉴스_${i+1}.png`);
+  }));
+  document.querySelector(`#block-${i} [data-act="dup"]`).addEventListener('click', () => {
+    const copy = JSON.parse(JSON.stringify(slides[i])); copy.id = crypto.randomUUID();
+    slides.splice(i+1, 0, copy); buildAllBlocks();
+  });
+  document.querySelector(`#block-${i} [data-act="addafter"]`).addEventListener('click', () => {
+    slides.splice(i+1, 0, makeSlide()); buildAllBlocks();
+  });
+  document.querySelector(`#block-${i} [data-act="del"]`).addEventListener('click', () => {
+    if (slides.length === 1){ slides = [makeSlide()]; buildAllBlocks(); return; }
+    slides.splice(i, 1); buildAllBlocks();
+  });
+}
+
+function updateBlockStage(i){
+  const s = slides[i];
+  const stage = document.getElementById('stage-'+i);
+  const bg = document.getElementById('stage-bg-'+i);
+  const overlay = document.getElementById('stage-overlay-'+i);
+  const placeholder = document.getElementById('placeholder-'+i);
+
+  bg.style.backgroundImage = s.image ? `url(${s.image})` : 'none';
+  bg.style.backgroundSize = s.image ? `${s.zoom}%` : 'cover';
+  bg.style.backgroundPosition = `${s.focusX}% ${s.focusY}%`;
+  placeholder.style.display = s.image ? 'none' : 'flex';
+  overlay.style.opacity = s.dim/100;
+
+  [...stage.querySelectorAll('.layer, .pagenum')].forEach(el => el.remove());
+  ['headline','body'].forEach(key => {
+    const layer = s[key];
+    const el = document.createElement('div');
+    el.className = 'layer' + (s.selectedLayer === key ? ' selected' : '');
+    el.dataset.layerKey = key;
     el.style.top = layer.y + '%';
+    el.style.left = layer.x + '%';
+    el.style.fontFamily = layer.font;
+    el.style.fontSize = (layer.size*0.68) + 'px';
+    el.style.color = layer.color;
+    el.style.fontWeight = layer.weight;
+    el.style.textAlign = layer.align;
+    const shOp = Math.min(layer.shadow,100)/100*0.9;
+    const shBlur = 4 + layer.shadow*0.12;
+    const shOffset = 2 + layer.shadow*0.02;
+    el.style.textShadow = layer.shadow > 0 ? `0 ${shOffset.toFixed(1)}px ${shBlur.toFixed(1)}px rgba(0,0,0,${shOp.toFixed(2)})` : 'none';
+    el.style.fontStyle = layer.italic ? 'italic' : 'normal';
+    el.style.webkitTextStroke = layer.stroke > 0 ? `${(layer.stroke/100*3.2).toFixed(1)}px ${layer.strokeColor}` : '0';
+    el.style.paintOrder = 'stroke fill';
+    if (layer.align === 'center') el.style.transform = 'translate(-50%,-50%)';
+    else if (layer.align === 'left') el.style.transform = 'translate(0,-50%)';
+    else el.style.transform = 'translate(-100%,-50%)';
+    el.textContent = layer.text;
+    const handle = document.createElement('div');
+    handle.className = 'resize-handle';
+    handle.title = '드래그해서 크기 조절 (반대쪽도 비율대로 같이 커져요)';
+    el.appendChild(handle);
+    stage.appendChild(el);
+    attachDrag(el, layer, stage, i);
+    attachResizeHandle(handle, el, key, stage, i);
+    el.addEventListener('pointerdown', (e) => { e.stopPropagation(); switchTab(i, key, true); });
+  });
+
+  if (showPageNum){
+    const pn = document.createElement('div'); pn.className = 'pagenum';
+    pn.textContent = String(i+1).padStart(2,'0') + '  —  ' + String(slides.length).padStart(2,'0');
+    stage.appendChild(pn);
+  }
+
+  const hp = document.getElementById('headline-preview-'+i);
+  const bp = document.getElementById('body-preview-'+i);
+  if (hp) hp.textContent = s.headline.text.slice(0,20) || '(비어있음)';
+  if (bp) bp.textContent = s.body.text.slice(0,24) || '(비어있음)';
+
+  if (i === 0 && document.getElementById('gp-preview-stage')) updateGpPreview();
+}
+
+function syncBlockControls(i){
+  const s = slides[i];
+  [['h', s.headline], ['b', s.body]].forEach(([p, layer]) => {
+    document.getElementById(p+'-text-'+i).value = layer.text;
+    document.getElementById(p+'-font-'+i).value = layer.font;
+    document.getElementById(p+'-size-'+i).value = layer.size;
+    document.getElementById(p+'-size-val-'+i).textContent = layer.size+'px';
+    document.getElementById(p+'-shadow-'+i).value = layer.shadow;
+    document.getElementById(p+'-shadow-val-'+i).textContent = layer.shadow+'%';
+    document.querySelectorAll(`#${p}-color-${i} .swatch`).forEach(sw => sw.classList.toggle('active', sw.dataset.c.toLowerCase() === layer.color.toLowerCase()));
+    const custom = document.querySelector(`#${p}-color-${i} .custom-color`); if (custom) custom.value = layer.color.startsWith('#') ? layer.color : '#ffffff';
+    document.querySelectorAll(`#${p}-weight-${i} button[data-w]`).forEach(b => b.classList.toggle('active', +b.dataset.w === layer.weight));
+    document.querySelectorAll(`#${p}-align-${i} button`).forEach(b => b.classList.toggle('active', b.dataset.a === layer.align));
+    document.getElementById(p+'-italic-'+i).classList.toggle('active', layer.italic);
+    document.getElementById(p+'-stroke-'+i).value = layer.stroke;
+    document.getElementById(p+'-stroke-val-'+i).textContent = layer.stroke+'%';
+    document.getElementById(p+'-strokecolor-'+i).value = layer.strokeColor;
+    document.getElementById(p+'-nx-'+i).value = Math.round(layer.x);
+    document.getElementById(p+'-ny-'+i).value = Math.round(layer.y);
+  });
+  document.getElementById('img-zoom-'+i).value = s.zoom;
+  document.getElementById('zoom-val-'+i).textContent = s.zoom+'%';
+  document.getElementById('img-dim-'+i).value = s.dim;
+  document.getElementById('dim-val-'+i).textContent = s.dim+'%';
+}
+
+function attachResizeHandle(handle, el, key, stage, i){
+  let dragging = false, startY, startSize, ratio;
+  handle.addEventListener('pointerdown', (e) => {
+    e.stopPropagation(); e.preventDefault();
+    dragging = true; handle.setPointerCapture(e.pointerId);
+    startY = e.clientY;
+    const s = slides[i];
+    const layer = s[key];
+    const other = key === 'headline' ? s.body : s.headline;
+    startSize = layer.size;
+    ratio = other.size / layer.size;
+  });
+  handle.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const s = slides[i];
+    const layer = s[key];
+    const other = key === 'headline' ? s.body : s.headline;
+    const dy = e.clientY - startY;
+    const newSize = Math.min(120, Math.max(10, Math.round(startSize + dy*0.35)));
+    layer.size = newSize;
+    other.size = Math.min(120, Math.max(8, Math.round(newSize * ratio)));
+    el.style.fontSize = (layer.size*0.68) + 'px';
+    const otherKey = key === 'headline' ? 'body' : 'headline';
+    const otherEl = stage.querySelector(`.layer[data-layer-key="${otherKey}"]`);
+    if (otherEl) otherEl.style.fontSize = (other.size*0.68) + 'px';
+  });
+  handle.addEventListener('pointerup', () => {
+    if (!dragging) return;
+    dragging = false;
+    updateBlockStage(i); syncBlockControls(i);
+  });
+}
+
+function attachDrag(el, layer, stage, i){
+  let dragging = false, startX, startY, startLx, startLy;
+  el.addEventListener('pointerdown', (e) => {
+    dragging = true; el.setPointerCapture(e.pointerId);
+    startX = e.clientX; startY = e.clientY; startLx = layer.x; startLy = layer.y;
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const rect = stage.getBoundingClientRect();
+    const dx = (e.clientX-startX)/rect.width*100;
+    const dy = (e.clientY-startY)/rect.height*100;
+    layer.x = Math.min(97, Math.max(3, startLx+dx));
+    layer.y = Math.min(97, Math.max(3, startLy+dy));
+    el.style.left = layer.x+'%'; el.style.top = layer.y+'%';
   });
   el.addEventListener('pointerup', () => dragging = false);
 }
 
-// ---------- image upload ----------
-document.getElementById('img-input').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    currentSlideObj().image = ev.target.result;
-    render();
-  };
-  reader.readAsDataURL(file);
+function applyPresetToSlide(s, preset){
+  s.headline.align = preset.apply.hAlign; s.headline.x = preset.apply.hX; s.headline.y = preset.apply.hY; s.headline.size = preset.apply.hSize;
+  s.body.align = preset.apply.bAlign; s.body.x = preset.apply.bX; s.body.y = preset.apply.bY; s.body.size = preset.apply.bSize;
+}
+
+/* ---- global batch panel: applies to all blocks live ---- */
+const gpHsize = document.getElementById('gp-hsize');
+const gpBsize = document.getElementById('gp-bsize');
+const gpDim = document.getElementById('gp-dim');
+const gpShadow = document.getElementById('gp-shadow');
+const gpFont = document.getElementById('gp-font');
+const gpLayout = document.getElementById('gp-layout');
+gpHsize.dataset.prev = gpHsize.value;
+gpBsize.dataset.prev = gpBsize.value;
+
+function refreshAllStagesAndControls(){ slides.forEach((s,i) => { updateBlockStage(i); syncBlockControls(i); }); updateGpPreview(); }
+
+gpHsize.addEventListener('input', e => {
+  const newV = +e.target.value;
+  const oldV = +gpHsize.dataset.prev || newV;
+  const ratio = (+gpBsize.value) / oldV;
+  const newB = Math.min(70, Math.max(8, Math.round(newV * ratio)));
+  document.getElementById('gp-hsize-val').textContent = newV+'px';
+  document.getElementById('gp-bsize-val').textContent = newB+'px';
+  gpBsize.value = newB;
+  gpHsize.dataset.prev = newV;
+  slides.forEach(s => { s.headline.size = newV; s.body.size = newB; });
+  refreshAllStagesAndControls();
+});
+gpBsize.addEventListener('input', e => {
+  const newV = +e.target.value;
+  const oldV = +gpBsize.dataset.prev || newV;
+  const ratio = (+gpHsize.value) / oldV;
+  const newH = Math.min(120, Math.max(10, Math.round(newV * ratio)));
+  document.getElementById('gp-bsize-val').textContent = newV+'px';
+  document.getElementById('gp-hsize-val').textContent = newH+'px';
+  gpHsize.value = newH;
+  gpBsize.dataset.prev = newV;
+  slides.forEach(s => { s.body.size = newV; s.headline.size = newH; });
+  refreshAllStagesAndControls();
+});
+gpDim.addEventListener('input', e => { const v=+e.target.value; document.getElementById('gp-dim-val').textContent=v+'%'; slides.forEach(s=>s.dim=v); refreshAllStagesAndControls(); });
+gpShadow.addEventListener('input', e => { const v=+e.target.value; document.getElementById('gp-shadow-val').textContent=v+'%'; slides.forEach(s=>{s.headline.shadow=v; s.body.shadow=v;}); refreshAllStagesAndControls(); });
+gpFont.addEventListener('change', e => { const v=e.target.value; slides.forEach(s=>{s.headline.font=v; s.body.font=v;}); refreshAllStagesAndControls(); });
+gpLayout.addEventListener('change', e => {
+  const preset = LAYOUT_PRESETS.find(p=>p.key===e.target.value); if(!preset) return;
+  slides.forEach(s=>applyPresetToSlide(s,preset));
+  gpHsize.value = preset.apply.hSize; gpHsize.dataset.prev = preset.apply.hSize;
+  gpBsize.value = preset.apply.bSize; gpBsize.dataset.prev = preset.apply.bSize;
+  document.getElementById('gp-hsize-val').textContent = preset.apply.hSize+'px';
+  document.getElementById('gp-bsize-val').textContent = preset.apply.bSize+'px';
+  refreshAllStagesAndControls();
 });
 
-// ---------- text controls ----------
-document.getElementById('add-text').addEventListener('click', () => {
-  const layer = makeLayer();
-  currentSlideObj().layers.push(layer);
-  selectedLayerId = layer.id;
-  render();
+document.querySelectorAll('#gp-weight button[data-w]').forEach(btn => btn.addEventListener('click', () => {
+  const w = +btn.dataset.w;
+  slides.forEach(s => { s.headline.weight = w; s.body.weight = w; });
+  document.querySelectorAll('#gp-weight button[data-w]').forEach(b => b.classList.toggle('active', b===btn));
+  refreshAllStagesAndControls();
+}));
+document.getElementById('gp-italic').addEventListener('click', (e) => {
+  const btn = e.currentTarget;
+  const turnOn = !btn.classList.contains('active');
+  slides.forEach(s => { s.headline.italic = turnOn; s.body.italic = turnOn; });
+  btn.classList.toggle('active', turnOn);
+  refreshAllStagesAndControls();
 });
-document.getElementById('txt-content').addEventListener('input', (e) => {
-  const l = selectedLayer(); if (!l) return; l.text = e.target.value; render();
+document.getElementById('gp-stroke').addEventListener('input', e => {
+  const v = +e.target.value;
+  document.getElementById('gp-stroke-val').textContent = v + '%';
+  slides.forEach(s => { s.headline.stroke = v; s.body.stroke = v; });
+  refreshAllStagesAndControls();
 });
-document.getElementById('txt-size').addEventListener('input', (e) => {
-  const l = selectedLayer(); if (!l) return; l.size = +e.target.value; render();
+document.getElementById('gp-strokecolor').addEventListener('input', e => {
+  const c = e.target.value;
+  slides.forEach(s => { s.headline.strokeColor = c; s.body.strokeColor = c; });
+  refreshAllStagesAndControls();
 });
-document.getElementById('txt-color').addEventListener('input', (e) => {
-  const l = selectedLayer(); if (!l) return; l.color = e.target.value; render();
+
+const gpColorSwatchesEl = document.getElementById('gp-color-swatches');
+gpColorSwatchesEl.innerHTML = COLORS.map(col => `<div class="swatch" data-c="${col}" style="background:${col}"></div>`).join('')
+  + `<input type="color" class="custom-color" id="gp-color-custom" style="width:26px;height:26px;border:none;background:none;padding:0;">`;
+gpColorSwatchesEl.querySelectorAll('.swatch').forEach(sw => sw.addEventListener('click', () => {
+  const c = sw.dataset.c;
+  slides.forEach(s => { s.headline.color = c; s.body.color = c; });
+  gpColorSwatchesEl.querySelectorAll('.swatch').forEach(x => x.classList.toggle('active', x === sw));
+  refreshAllStagesAndControls();
+}));
+document.getElementById('gp-color-custom').addEventListener('input', e => {
+  const c = e.target.value;
+  slides.forEach(s => { s.headline.color = c; s.body.color = c; });
+  refreshAllStagesAndControls();
 });
-document.getElementById('txt-weight').addEventListener('change', (e) => {
-  const l = selectedLayer(); if (!l) return; l.weight = e.target.value; render();
-});
-document.getElementById('txt-align').addEventListener('change', (e) => {
-  const l = selectedLayer(); if (!l) return; l.align = e.target.value; render();
-});
-document.querySelectorAll('.swatch').forEach(sw => {
-  sw.addEventListener('click', () => {
-    const l = selectedLayer(); if (!l) return;
-    l.color = sw.dataset.c;
-    document.getElementById('txt-color').value = sw.dataset.c;
-    render();
+document.querySelectorAll('#gp-align button').forEach(btn => btn.addEventListener('click', () => {
+  const a = btn.dataset.a;
+  slides.forEach(s=>{ s.headline.align=a; s.headline.x=defaultXForAlign(a); s.body.align=a; s.body.x=defaultXForAlign(a); });
+  document.querySelectorAll('#gp-align button').forEach(b=>b.classList.toggle('active', b===btn));
+  refreshAllStagesAndControls();
+}));
+document.getElementById('gp-pagenum').addEventListener('change', e => { showPageNum = e.target.checked; slides.forEach((s,i)=>updateBlockStage(i)); });
+
+/* 전체 카드 위치 한번에 미세 조정 */
+function nudgeAll(axis, dir){
+  slides.forEach(s => {
+    s.headline[axis] = Math.min(100, Math.max(0, s.headline[axis] + dir*2));
+    s.body[axis] = Math.min(100, Math.max(0, s.body[axis] + dir*2));
   });
-});
-document.getElementById('del-text').addEventListener('click', () => {
-  const s = currentSlideObj();
-  s.layers = s.layers.filter(l => l.id !== selectedLayerId);
-  selectedLayerId = null;
-  render();
-});
+  refreshAllStagesAndControls();
+}
+document.getElementById('gp-ny-dec').addEventListener('click', () => nudgeAll('y', -1));
+document.getElementById('gp-ny-inc').addEventListener('click', () => nudgeAll('y', 1));
+document.getElementById('gp-nx-dec').addEventListener('click', () => nudgeAll('x', -1));
+document.getElementById('gp-nx-inc').addEventListener('click', () => nudgeAll('x', 1));
+document.getElementById('gp-ny-reset').addEventListener('click', () => { slides.forEach(s=>{s.headline.y=50; s.body.y=50;}); refreshAllStagesAndControls(); });
+document.getElementById('gp-nx-reset').addEventListener('click', () => { slides.forEach(s=>{s.headline.x=50; s.body.x=50;}); refreshAllStagesAndControls(); });
 
-// ---------- slide actions ----------
-document.getElementById('dup-slide').addEventListener('click', () => {
-  const copy = JSON.parse(JSON.stringify(currentSlideObj()));
-  copy.id = crypto.randomUUID();
-  copy.layers.forEach(l => l.id = crypto.randomUUID());
-  slides.splice(currentSlide + 1, 0, copy);
-  currentSlide += 1;
-  render();
-});
-document.getElementById('del-slide').addEventListener('click', () => {
-  if (slides.length === 1){ slides = [makeSlide()]; currentSlide = 0; render(); return; }
-  slides.splice(currentSlide, 1);
-  currentSlide = Math.max(0, currentSlide - 1);
-  selectedLayerId = null;
-  render();
-});
+/* 전체 카드에 사진 한번에 업로드 (순서대로 배정, 카드 수보다 사진이 많으면 카드 추가) */
+function readFileAsDataURL(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
-// deselect when clicking empty stage area
-stage.addEventListener('pointerdown', (e) => {
-  if (e.target === stage || e.target === placeholder){ selectedLayerId = null; render(); }
-});
+document.getElementById('gp-bulk-img').addEventListener('change', async (e) => {
+  const files = [...e.target.files];
+  if (!files.length) return;
+  const label = e.target.closest('label');
+  const original = label.childNodes[0].textContent;
 
-// ---------- export via canvas ----------
-async function slideToCanvas(slide, W = 1080, H = 1350){
-  const canvas = document.createElement('canvas');
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d');
-
-  // background
-  if (slide.image){
-    const img = await loadImage(slide.image);
-    // cover-fit
-    const scale = Math.max(W / img.width, H / img.height);
-    const w = img.width * scale, h = img.height * scale;
-    ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+  if (files.length === 1){
+    label.childNodes[0].textContent = '업로드 중...';
+    try {
+      const dataUrl = await readFileAsDataURL(files[0]);
+      slides.forEach(s => s.image = dataUrl);
+    } catch (err){ console.error('이미지를 불러오지 못했어요:', files[0].name, err); }
   } else {
-    ctx.fillStyle = '#3a2c30';
-    ctx.fillRect(0, 0, W, H);
+    while (slides.length < files.length) slides.push(makeSlide());
+    for (let idx = 0; idx < files.length; idx++){
+      label.childNodes[0].textContent = `업로드 중... (${idx+1}/${files.length}) `;
+      try {
+        slides[idx].image = await readFileAsDataURL(files[idx]);
+      } catch (err){
+        console.error('이미지를 불러오지 못했어요:', files[idx].name, err);
+      }
+    }
   }
 
-  // layers
-  slide.layers.forEach(layer => {
-    const scaledSize = layer.size * (W / 380); // 380 = stage css width basis
-    ctx.font = `${layer.weight} ${scaledSize}px Pretendard, sans-serif`;
+  label.childNodes[0].textContent = original;
+  buildAllBlocks();
+  e.target.value = '';
+});
+
+document.getElementById('output-size').addEventListener('change', e => {
+  currentOutputSize = SIZE_PRESETS[e.target.value];
+  document.documentElement.style.setProperty('--stage-ratio', `${currentOutputSize.w} / ${currentOutputSize.h}`);
+});
+
+document.getElementById('add-slide').addEventListener('click', () => { slides.push(makeSlide()); buildAllBlocks(); requestAnimationFrame(()=>document.getElementById('block-'+(slides.length-1)).scrollIntoView({behavior:'smooth'})); });
+
+/* =====================================================
+   CANVAS EXPORT
+===================================================== */
+async function ensureFontsLoaded(slide){
+  const specs = new Set();
+  [slide.headline, slide.body].forEach(l => { const family = l.font.split(',')[0].replace(/'/g,'').trim(); specs.add(`${l.weight} 40px "${family}"`); });
+  await Promise.all([...specs].map(spec => document.fonts.load(spec).catch(()=>{})));
+  await document.fonts.ready;
+}
+function loadImage(src){ return new Promise((resolve, reject) => { const img = new Image(); img.onload=()=>resolve(img); img.onerror=reject; img.src=src; }); }
+function wrapText(ctx, text, maxWidth){
+  const paragraphs = text.split('\n'); const out = [];
+  paragraphs.forEach(par => {
+    const words = par.split(' '); let line = '';
+    words.forEach(word => {
+      const test = line ? line+' '+word : word;
+      if (ctx.measureText(test).width > maxWidth && line){ out.push(line); line = word; } else { line = test; }
+    });
+    out.push(line);
+  });
+  return out;
+}
+
+async function slideToCanvas(slide, slideIndex, total, W=1080, H=1350){
+  await ensureFontsLoaded(slide);
+  const canvas = document.createElement('canvas'); canvas.width=W; canvas.height=H;
+  const ctx = canvas.getContext('2d');
+
+  if (slide.image){
+    const img = await loadImage(slide.image);
+    const baseScale = Math.max(W/img.width, H/img.height);
+    const scale = baseScale * (slide.zoom/100);
+    const w = img.width*scale, h = img.height*scale;
+    const x = (W-w) * (slide.focusX/100);
+    const y = (H-h) * (slide.focusY/100);
+    ctx.drawImage(img, x, y, w, h);
+  } else {
+    ctx.fillStyle = '#3a2c30'; ctx.fillRect(0,0,W,H);
+  }
+
+  ctx.fillStyle = `rgba(0,0,0,${slide.dim/100})`; ctx.fillRect(0,0,W,H);
+
+  [slide.headline, slide.body].forEach(layer => {
+    if (!layer.text) return;
+    const scaledSize = layer.size * (W/300) * 0.68;
+    const family = layer.font.split(',')[0].replace(/'/g,'').trim();
+    const fallback = layer.font.includes('serif') && !layer.font.includes('sans') ? 'serif' : 'sans-serif';
+    const italicPrefix = layer.italic ? 'italic ' : '';
+    ctx.font = `${italicPrefix}${layer.weight} ${scaledSize}px "${family}", ${fallback}`;
     ctx.fillStyle = layer.color;
     ctx.textAlign = layer.align;
     ctx.textBaseline = 'middle';
-    const x = (layer.x / 100) * W;
-    const y = (layer.y / 100) * H;
-    const lines = wrapText(ctx, layer.text, W * 0.86);
-    const lineHeight = scaledSize * 1.35;
-    const totalH = lineHeight * lines.length;
-    lines.forEach((line, i) => {
-      ctx.fillText(line, x, y - totalH/2 + lineHeight*i + lineHeight/2);
+    if (layer.shadow > 0){
+      ctx.shadowColor = `rgba(0,0,0,${(Math.min(layer.shadow,100)/100*0.9).toFixed(2)})`;
+      ctx.shadowBlur = 4 + layer.shadow*0.35;
+      ctx.shadowOffsetY = scaledSize*(0.03 + layer.shadow*0.0004);
+    } else { ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0; }
+
+    const x = (layer.x/100)*W;
+    const y = (layer.y/100)*H;
+    const maxWidth = layer.align === 'center' ? W*0.86 : W*0.7;
+    const lines = wrapText(ctx, layer.text, maxWidth);
+    const lineHeight = scaledSize*1.3;
+    const totalH = lineHeight*lines.length;
+    lines.forEach((line, idx) => {
+      const ly = y - totalH/2 + lineHeight*idx + lineHeight/2;
+      if (layer.stroke > 0){
+        ctx.save();
+        ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+        ctx.lineJoin = 'round'; ctx.miterLimit = 2;
+        ctx.strokeStyle = layer.strokeColor;
+        ctx.lineWidth = (layer.stroke/100) * scaledSize * 0.2 * 2;
+        ctx.strokeText(line, x, ly);
+        ctx.restore();
+      }
+      ctx.fillText(line, x, ly);
     });
   });
+
+  if (showPageNum){
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 1;
+    ctx.font = `600 ${W*0.028}px "Pretendard", sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(String(slideIndex+1).padStart(2,'0')+'  —  '+String(total).padStart(2,'0'), W*0.94, H*0.96);
+  }
 
   return canvas;
 }
 
-function wrapText(ctx, text, maxWidth){
-  const paragraphs = text.split('\n');
-  const outLines = [];
-  paragraphs.forEach(par => {
-    const words = par.split(' ');
-    let line = '';
-    words.forEach(word => {
-      const test = line ? line + ' ' + word : word;
-      if (ctx.measureText(test).width > maxWidth && line){
-        outLines.push(line);
-        line = word;
-      } else {
-        line = test;
-      }
-    });
-    outLines.push(line);
-  });
-  return outLines;
-}
-
-function loadImage(src){
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = src;
-  });
-}
-
-document.getElementById('download-btn').addEventListener('click', async () => {
-  const canvas = await slideToCanvas(currentSlideObj());
-  downloadCanvas(canvas, `카드뉴스_${currentSlide+1}.png`);
-});
-
-document.getElementById('download-all').addEventListener('click', async () => {
-  for (let i = 0; i < slides.length; i++){
-    const canvas = await slideToCanvas(slides[i]);
-    downloadCanvas(canvas, `카드뉴스_${i+1}.png`);
-    await new Promise(r => setTimeout(r, 250));
-  }
-});
-
+function canvasToBlob(canvas){ return new Promise(res => canvas.toBlob(res, 'image/png')); }
 function downloadCanvas(canvas, filename){
-  canvas.toBlob(blob => {
+  canvasToBlob(canvas).then(blob => {
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-  }, 'image/png');
+    const a = document.createElement('a'); a.href=url; a.download=filename;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
 }
 
-render();
+document.getElementById('zip-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('zip-btn');
+  const original = btn.textContent; btn.textContent='만드는 중...'; btn.disabled=true;
+  try{
+    const zip = new JSZip();
+    for (let i=0;i<slides.length;i++){
+      const canvas = await slideToCanvas(slides[i], i, slides.length, currentOutputSize.w, currentOutputSize.h);
+      const blob = await canvasToBlob(canvas);
+      zip.file(`카드뉴스_${i+1}.png`, blob);
+    }
+    const content = await zip.generateAsync({type:'blob'});
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a'); a.href=url; a.download='카드뉴스_전체.zip';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  } finally { btn.textContent=original; btn.disabled=false; }
+});
+
+renderStep1();
 </script>
 </body>
 </html>
