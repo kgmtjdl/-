@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>로이드밤 방문 기록</title>
+<style>
+  :root{
+    --ink:#2A211D;
+    --ink-soft:#6B5D56;
+    --bg:#FAF7F4;
+    --card:#FFFFFF;
+    --wine:#7A2E38;
+    --wine-soft:#F3E3E1;
+    --gold:#B08D57;
+    --line:#EAE0DA;
+    --ok:#5C7A5C;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  button{
+    font-family:inherit;
+    -webkit-appearance:none;
+    appearance:none;
+    touch-action:manipulation;
+    border:none;
+    background:none;
+    margin:0;
+    cursor:pointer;
+    color:inherit;
+  }
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+  .wrap{max-width:520px; margin:0 auto; padding:0 18px;}
+
+  header{
+    padding:28px 0 18px;
+    text-align:center;
+    border-bottom:1px solid var(--line);
+    margin-bottom:20px;
+  }
+  .brand{
+    font-family:Georgia,'Noto Serif KR',serif;
+    font-size:13px;
+    letter-spacing:0.35em;
+    color:var(--gold);
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:21px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+
+  .tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:22px;
+    background:var(--card);
+    padding:5px;
+    border-radius:999px;
+    border:1px solid var(--line);
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:10px 4px;
+    border-radius:999px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all .15s ease;
+    user-select:none;
+    white-space:nowrap;
+  }
+  .tab.active{
+    background:var(--wine);
+    color:#fff;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px;
+    margin-bottom:14px;
+  }
+
+  .field{margin-bottom:18px;}
+  .field label{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+  }
+  input[type=text], input[type=date], select{
+    width:100%;
+    padding:12px 14px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    font-size:16px;
+    color:var(--ink);
+    background:#fff;
+    font-family:inherit;
+  }
+  input:focus, select:focus{ outline:none; border-color:var(--wine); }
+
+  .seg{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .seg-btn{
+    flex:1;
+    min-width:80px;
+    padding:12px 8px;
+    text-align:center;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink-soft);
+    cursor:pointer;
+    background:#fff;
+    transition:all .12s ease;
+  }
+  .seg-btn.selected{
+    border-color:var(--wine);
+    background:var(--wine-soft);
+    color:var(--wine);
+  }
+
+  .submit-btn{
+    width:100%;
+    padding:16px;
+    background:var(--wine);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .submit-btn:disabled{ opacity:.5; }
+  .submit-btn:active{ transform:scale(0.98); }
+
+  .toast{
+    text-align:center;
+    padding:12px;
+    border-radius:10px;
+    background:#EDF2ED;
+    color:var(--ok);
+    font-size:14px;
+    font-weight:700;
+    margin-top:14px;
+    display:none;
+  }
+  .toast.show{display:block;}
+
+  /* View tab */
+  .stat-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+  .stat{
+    flex:1;
+    min-width:70px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 10px;
+    text-align:center;
+  }
+  .stat .num{ font-size:22px; font-weight:800; color:var(--wine); }
+  .stat .lbl{ font-size:11px; color:var(--ink-soft); margin-top:2px; }
+
+  .filters{
+    display:flex;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .filters select{ font-size:13px; padding:8px 10px; }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+  }
+  th,td{
+    padding:8px 6px;
+    text-align:left;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  th{ color:var(--ink-soft); font-weight:700; font-size:11px; }
+  .table-scroll{ overflow-x:auto; margin:-4px; padding:4px; }
+
+  .action-row{
+    display:flex;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .action-btn{
+    flex:1;
+    padding:11px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:#fff;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .action-btn.danger{ color:#A3403F; border-color:#EED2D1; }
+  .action-btn.primary{ background:var(--wine); color:#fff; border-color:var(--wine); }
+
+  .designer-row{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .designer-row .dname{ flex:1.3; min-width:0; }
+  .count-field{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .count-field .count-lbl{
+    font-size:10px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+  .count-field input[type=number]{
+    width:100%;
+    padding:11px 4px;
+    text-align:center;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    font-size:15px;
+    font-family:inherit;
+  }
+  .row-remove{
+    flex:0 0 auto;
+    width:36px; height:36px;
+    border-radius:8px;
+    border:1.5px solid var(--line);
+    background:#fff;
+    color:var(--ink-soft);
+    font-size:16px;
+    cursor:pointer;
+    align-self:flex-end;
+  }
+
+  .subtabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:14px;
+  }
+  .subtab{
+    padding:7px 14px;
+    border-radius:8px;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--ink-soft);
+    background:var(--card);
+    border:1px solid var(--line);
+    cursor:pointer;
+  }
+  .subtab.active{
+    background:var(--ink);
+    color:#fff;
+    border-color:var(--ink);
+  }
+
+  .notice{
+    background:var(--wine-soft);
+    color:var(--wine);
+    border:1px solid #E7C9C7;
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:13px;
+    line-height:1.5;
+    margin-bottom:14px;
+  }
+
+  .empty{
+    text-align:center;
+    padding:30px 10px;
+    color:var(--ink-soft);
+    font-size:13px;
+  }
+  .loading{ text-align:center; padding:20px; color:var(--ink-soft); font-size:13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">LLOYDBALM</div>
+    <h1>방문 · 콘텐츠 기록</h1>
+  </header>
+
+  <div class="tabs">
+    <button type="button" class="tab active" id="tabEntry" onclick="switchTab('entry')">입력</button>
+    <button type="button" class="tab" id="tabContent" onclick="switchTab('content')">콘텐츠 체크</button>
+    <button type="button" class="tab" id="tabView" onclick="switchTab('view')">확인 (원장용)</button>
+  </div>
+
+  <!-- ENTRY -->
+  <div id="entryView">
+    <div class="notice">📌 <b>신규 고객은 꼭 기록해주세요!</b> 재방문 고객은 여유될 때 적으면 돼요.</div>
+    <div class="card">
+      <div class="field">
+        <label>지점</label>
+        <div class="seg" id="branchSeg">
+          <button type="button" class="seg-btn" data-val="쌍용점">쌍용점</button>
+          <button type="button" class="seg-btn" data-val="불당점">불당점</button>
+          <button type="button" class="seg-btn" data-val="탕정점">탕정점</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>담당 디자이너</label>
+        <input type="text" id="designer" placeholder="이름 입력">
+      </div>
+
+      <div class="field">
+        <label>날짜</label>
+        <input type="date" id="visitDate">
+      </div>
+
+      <div class="field">
+        <label>고객명 (또는 이니셜)</label>
+        <input type="text" id="customer" placeholder="예: 김민지 또는 ㄱㅁㅈ">
+      </div>
+
+      <div class="field">
+        <label>구분</label>
+        <div class="seg" id="typeSeg">
+          <button type="button" class="seg-btn" data-val="신규">신규 ★</button>
+          <button type="button" class="seg-btn" data-val="재방">재방</button>
+          <button type="button" class="seg-btn" data-val="대체">대체</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>지명 여부</label>
+        <div class="seg" id="designatedSeg">
+          <button type="button" class="seg-btn" data-val="Y">지명</button>
+          <button type="button" class="seg-btn" data-val="N">비지명</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>방문 경로</label>
+        <div class="seg" id="routeSeg">
+          <button type="button" class="seg-btn" data-val="네이버">네이버</button>
+          <button type="button" class="seg-btn" data-val="블로그">블로그</button>
+          <button type="button" class="seg-btn" data-val="인스타">인스타</button>
+          <button type="button" class="seg-btn" data-val="틱톡">틱톡</button>
+          <button type="button" class="seg-btn" data-val="지인소개">지인소개</button>
+          <button type="button" class="seg-btn" data-val="워크인">워크인</button>
+          <button type="button" class="seg-btn" data-val="기타">기타</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>리뷰 작성 여부</label>
+        <div class="seg" id="reviewSeg">
+          <button type="button" class="seg-btn" data-val="Y">작성함</button>
+          <button type="button" class="seg-btn" data-val="N">미작성</button>
+        </div>
+      </div>
+
+      <button class="submit-btn" id="submitBtn" onclick="submitEntry()">저장하기</button>
+      <div class="toast" id="toast">✓ 저장됐어요. 다음 고객 계속 입력하세요.</div>
+    </div>
+  </div>
+
+  <!-- CONTENT CHECK (매니저용) -->
+  <div id="contentView" style="display:none;">
+    <div class="card">
+      <div class="field">
+        <label>지점</label>
+        <div class="seg" id="cBranchSeg">
+          <button type="button" class="seg-btn" data-val="쌍용점">쌍용점</button>
+          <button type="button" class="seg-btn" data-val="불당점">불당점</button>
+          <button type="button" class="seg-btn" data-val="탕정점">탕정점</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>날짜</label>
+        <input type="date" id="cDate">
+      </div>
+
+      <div class="field">
+        <label>디자이너별 오늘 업로드 개수 (블로그 · 숏폼 각각)</label>
+        <div id="designerRows"></div>
+        <button class="action-btn" style="margin-top:8px;" onclick="addDesignerRow()">+ 디자이너 추가</button>
+      </div>
+
+      <button class="submit-btn" id="contentSubmitBtn" onclick="submitContent()">오늘 콘텐츠 체크 저장</button>
+      <div class="toast" id="contentToast">✓ 저장됐어요.</div>
+    </div>
+  </div>
+
+  <!-- VIEW -->
+  <div id="viewView" style="display:none;">
+    <div class="subtabs">
+      <button type="button" class="subtab active" id="subVisit" onclick="switchSubview('visit')">방문 기록</button>
+      <button type="button" class="subtab" id="subContent" onclick="switchSubview('content')">콘텐츠 현황</button>
+    </div>
+
+    <!-- 방문 기록 서브뷰 -->
+    <div id="visitSubview">
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="statTotal">-</div><div class="lbl">전체 건수</div></div>
+        <div class="stat"><div class="num" id="statNew">-</div><div class="lbl">신규</div></div>
+        <div class="stat"><div class="num" id="statReturn">-</div><div class="lbl">재방</div></div>
+        <div class="stat"><div class="num" id="statDesignated">-</div><div class="lbl">지명</div></div>
+      </div>
+
+      <div class="filters">
+        <select id="filterBranch" onchange="renderTable()">
+          <option value="">전 지점</option>
+          <option value="쌍용점">쌍용점</option>
+          <option value="불당점">불당점</option>
+          <option value="탕정점">탕정점</option>
+        </select>
+        <select id="filterMonth" onchange="renderTable()">
+          <option value="">전체 기간</option>
+        </select>
+      </div>
+
+      <div class="action-row">
+        <button class="action-btn primary" onclick="downloadCSV()">CSV 다운로드</button>
+        <button class="action-btn" onclick="copyForClaude()">클로드용 복사</button>
+      </div>
+      <div class="action-row">
+        <button class="action-btn" onclick="loadEntries()">새로고침</button>
+        <button class="action-btn danger" onclick="clearAll()">전체 삭제</button>
+      </div>
+
+      <div class="card" style="padding:12px;">
+        <div id="tableWrap" class="loading">불러오는 중...</div>
+      </div>
+    </div>
+
+    <!-- 콘텐츠 현황 서브뷰 -->
+    <div id="contentSubview" style="display:none;">
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="cStatTotal">-</div><div class="lbl">총 업로드 (블로그+숏폼)</div></div>
+        <div class="stat"><div class="num" id="cStatDesigners">-</div><div class="lbl">업로드한 디자이너 수</div></div>
+      </div>
+
+      <div class="filters">
+        <select id="cFilterBranch" onchange="renderContentTable()">
+          <option value="">전 지점</option>
+          <option value="쌍용점">쌍용점</option>
+          <option value="불당점">불당점</option>
+          <option value="탕정점">탕정점</option>
+        </select>
+        <select id="cFilterMonth" onchange="renderContentTable()">
+          <option value="">전체 기간</option>
+        </select>
+      </div>
+
+      <div class="action-row">
+        <button class="action-btn primary" onclick="downloadContentCSV()">CSV 다운로드</button>
+        <button class="action-btn" onclick="loadContentEntries()">새로고침</button>
+      </div>
+
+      <div class="card" style="padding:12px; margin-bottom:14px;">
+        <div style="font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:8px;">디자이너별 누적 업로드 수</div>
+        <div id="designerSummaryWrap" class="loading">불러오는 중...</div>
+      </div>
+
+      <div class="card" style="padding:12px;">
+        <div id="contentTableWrap" class="loading">불러오는 중...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let selections = { branch:null, type:null, designated:null, route:null, review:null };
+let allEntries = [];
+
+document.getElementById('visitDate').valueAsDate = new Date();
+
+document.querySelectorAll('#branchSeg .seg-btn').forEach(el=>{
+  el.onclick = ()=> selectSeg('branchSeg','branch',el);
+});
+document.querySelectorAll('#typeSeg .seg-btn').forEach(el=>{
+  el.onclick = ()=> selectSeg('typeSeg','type',el);
+});
+document.querySelectorAll('#designatedSeg .seg-btn').forEach(el=>{
+  el.onclick = ()=> selectSeg('designatedSeg','designated',el);
+});
+document.querySelectorAll('#routeSeg .seg-btn').forEach(el=>{
+  el.onclick = ()=> selectSeg('routeSeg','route',el);
+});
+document.querySelectorAll('#reviewSeg .seg-btn').forEach(el=>{
+  el.onclick = ()=> selectSeg('reviewSeg','review',el);
+});
+
+function selectSeg(groupId, key, el, store){
+  document.querySelectorAll('#'+groupId+' .seg-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  (store || selections)[key] = el.dataset.val;
+}
+
+function switchTab(tab){
+  document.getElementById('tabEntry').classList.toggle('active', tab==='entry');
+  document.getElementById('tabContent').classList.toggle('active', tab==='content');
+  document.getElementById('tabView').classList.toggle('active', tab==='view');
+  document.getElementById('entryView').style.display = tab==='entry' ? 'block':'none';
+  document.getElementById('contentView').style.display = tab==='content' ? 'block':'none';
+  document.getElementById('viewView').style.display = tab==='view' ? 'block':'none';
+  if(tab==='view'){ loadEntries(); loadContentEntries(); }
+}
+
+function switchSubview(sub){
+  document.getElementById('subVisit').classList.toggle('active', sub==='visit');
+  document.getElementById('subContent').classList.toggle('active', sub==='content');
+  document.getElementById('visitSubview').style.display = sub==='visit' ? 'block':'none';
+  document.getElementById('contentSubview').style.display = sub==='content' ? 'block':'none';
+}
+
+/* ---- 콘텐츠 체크 (매니저용) ---- */
+let cSelections = { branch:null };
+let contentEntries = [];
+let designerRowCount = 0;
+
+document.getElementById('cDate').valueAsDate = new Date();
+document.querySelectorAll('#cBranchSeg .seg-btn').forEach(el=>{
+  el.onclick = ()=> selectSeg('cBranchSeg','branch_c',el,cSelections);
+});
+addDesignerRow();
+addDesignerRow();
+
+function addDesignerRow(){
+  designerRowCount++;
+  const id = 'drow-' + designerRowCount;
+  const wrap = document.getElementById('designerRows');
+  const row = document.createElement('div');
+  row.className = 'designer-row';
+  row.id = id;
+  row.innerHTML = `
+    <input type="text" placeholder="디자이너 이름" class="dname">
+    <div class="count-field">
+      <span class="count-lbl">블로그</span>
+      <input type="number" class="dblog" min="0" value="0" inputmode="numeric">
+    </div>
+    <div class="count-field">
+      <span class="count-lbl">숏폼</span>
+      <input type="number" class="dshort" min="0" value="0" inputmode="numeric">
+    </div>
+    <button class="row-remove" onclick="document.getElementById('${id}').remove()">×</button>
+  `;
+  wrap.appendChild(row);
+}
+
+async function submitContent(){
+  const branch = cSelections.branch_c;
+  const date = document.getElementById('cDate').value;
+  if(!branch){ alert('지점을 선택해주세요'); return; }
+
+  const rows = Array.from(document.querySelectorAll('#designerRows .designer-row'));
+  const records = [];
+  for(const row of rows){
+    const name = row.querySelector('.dname').value.trim();
+    if(!name) continue;
+    const blogCount = Math.max(0, parseInt(row.querySelector('.dblog').value, 10) || 0);
+    const shortformCount = Math.max(0, parseInt(row.querySelector('.dshort').value, 10) || 0);
+    records.push({
+      id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+      branch, date, designer: name, blogCount, shortformCount,
+      savedAt: new Date().toISOString()
+    });
+  }
+  if(records.length === 0){ alert('디자이너를 최소 1명 입력해주세요'); return; }
+
+  const btn = document.getElementById('contentSubmitBtn');
+  btn.disabled = true; btn.textContent = '저장 중...';
+  try{
+    const existing = await window.storage.get('lloydbalm-content', true).catch(()=>null);
+    const list = existing && existing.value ? JSON.parse(existing.value) : [];
+    records.forEach(r => list.push(r));
+    await window.storage.set('lloydbalm-content', JSON.stringify(list), true);
+
+    document.getElementById('designerRows').innerHTML = '';
+    designerRowCount = 0;
+    addDesignerRow(); addDesignerRow();
+
+    const toast = document.getElementById('contentToast');
+    toast.classList.add('show');
+    setTimeout(()=> toast.classList.remove('show'), 2200);
+  }catch(e){
+    alert('저장 중 오류가 발생했어요.');
+  }finally{
+    btn.disabled = false; btn.textContent = '오늘 콘텐츠 체크 저장';
+  }
+}
+
+async function loadContentEntries(){
+  document.getElementById('contentTableWrap').innerHTML = '<div class="loading">불러오는 중...</div>';
+  try{
+    const res = await window.storage.get('lloydbalm-content', true).catch(()=>null);
+    contentEntries = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){ contentEntries = []; }
+  populateContentMonthFilter();
+  renderContentTable();
+}
+
+function populateContentMonthFilter(){
+  const sel = document.getElementById('cFilterMonth');
+  const current = sel.value;
+  const months = Array.from(new Set(contentEntries.map(e => (e.date||'').slice(0,7)).filter(Boolean))).sort().reverse();
+  sel.innerHTML = '<option value="">전체 기간</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+  if(months.includes(current)) sel.value = current;
+}
+
+function getContentFiltered(){
+  const b = document.getElementById('cFilterBranch').value;
+  const m = document.getElementById('cFilterMonth').value;
+  return contentEntries
+    .filter(e => !b || e.branch === b)
+    .filter(e => !m || (e.date||'').startsWith(m))
+    .sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+}
+
+function renderContentTable(){
+  const list = getContentFiltered();
+  const totalBlog = list.reduce((s,e)=> s + (e.blogCount||0), 0);
+  const totalShort = list.reduce((s,e)=> s + (e.shortformCount||0), 0);
+  document.getElementById('cStatTotal').textContent = totalBlog + totalShort;
+  const designers = new Set(list.filter(e => (e.blogCount||0) + (e.shortformCount||0) > 0).map(e=>e.designer));
+  document.getElementById('cStatDesigners').textContent = designers.size;
+
+  // 디자이너별 요약
+  const summary = {};
+  list.forEach(e=>{
+    if(!summary[e.designer]) summary[e.designer] = { blog:0, shortform:0 };
+    summary[e.designer].blog += (e.blogCount||0);
+    summary[e.designer].shortform += (e.shortformCount||0);
+  });
+  const names = Object.keys(summary).sort((a,b)=> (summary[b].blog+summary[b].shortform) - (summary[a].blog+summary[a].shortform));
+  const sw = document.getElementById('designerSummaryWrap');
+  if(names.length===0){
+    sw.innerHTML = '<div class="empty">데이터 없음</div>';
+  }else{
+    sw.innerHTML = names.map(n => `
+      <div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px;">
+        <span>${n}</span>
+        <span style="font-weight:700; color:var(--wine);">블로그 ${summary[n].blog} <span style="color:var(--ink-soft); font-weight:400;">/</span> 숏폼 ${summary[n].shortform}</span>
+      </div>
+    `).join('');
+  }
+
+  const wrap = document.getElementById('contentTableWrap');
+  if(list.length===0){ wrap.innerHTML = '<div class="empty">아직 기록이 없어요.</div>'; return; }
+  let html = '<div class="table-scroll"><table><thead><tr><th>날짜</th><th>지점</th><th>디자이너</th><th>블로그</th><th>숏폼</th></tr></thead><tbody>';
+  list.forEach(e=>{
+    html += `<tr><td>${e.date||''}</td><td>${e.branch||''}</td><td>${e.designer||''}</td><td>${e.blogCount||0}</td><td>${e.shortformCount||0}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function downloadContentCSV(){
+  const list = getContentFiltered();
+  if(list.length===0){ alert('다운로드할 데이터가 없어요.'); return; }
+  const header = ['날짜','지점','디자이너','블로그개수','숏폼개수'];
+  let csv = '\uFEFF' + header.join(',') + '\n';
+  list.forEach(e=>{
+    csv += [e.date||'', e.branch||'', e.designer||'', e.blogCount||0, e.shortformCount||0].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',') + '\n';
+  });
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const m = document.getElementById('cFilterMonth').value || 'all';
+  const b = document.getElementById('cFilterBranch').value || '전체';
+  a.href = url;
+  a.download = `로이드밤_콘텐츠체크_${b}_${m}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function submitEntry(){
+  const designer = document.getElementById('designer').value.trim();
+  const date = document.getElementById('visitDate').value;
+  const customer = document.getElementById('customer').value.trim();
+
+  if(!selections.branch){ alert('지점을 선택해주세요'); return; }
+  if(!designer){ alert('디자이너 이름을 입력해주세요'); return; }
+  if(!customer){ alert('고객명을 입력해주세요'); return; }
+  if(!selections.type){ alert('구분(신규/재방/대체)을 선택해주세요'); return; }
+  if(!selections.designated){ alert('지명 여부를 선택해주세요'); return; }
+  if(!selections.route){ alert('방문 경로를 선택해주세요'); return; }
+  if(!selections.review){ alert('리뷰 작성 여부를 선택해주세요'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '저장 중...';
+
+  const entry = {
+    id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+    branch: selections.branch,
+    designer: designer,
+    date: date,
+    customer: customer,
+    type: selections.type,
+    designated: selections.designated,
+    route: selections.route,
+    review: selections.review,
+    savedAt: new Date().toISOString()
+  };
+
+  try{
+    const existing = await window.storage.get('lloydbalm-entries', true).catch(()=>null);
+    const list = existing && existing.value ? JSON.parse(existing.value) : [];
+    list.push(entry);
+    await window.storage.set('lloydbalm-entries', JSON.stringify(list), true);
+
+    document.getElementById('customer').value = '';
+    selections.type = null; selections.designated = null; selections.route = null; selections.review = null;
+    document.querySelectorAll('#typeSeg .seg-btn, #designatedSeg .seg-btn, #routeSeg .seg-btn, #reviewSeg .seg-btn').forEach(b=>b.classList.remove('selected'));
+
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(()=> toast.classList.remove('show'), 2200);
+  }catch(e){
+    alert('저장 중 오류가 발생했어요. 다시 시도해주세요.');
+    console.error(e);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = '저장하기';
+  }
+}
+
+async function loadEntries(){
+  document.getElementById('tableWrap').innerHTML = '<div class="loading">불러오는 중...</div>';
+  try{
+    const res = await window.storage.get('lloydbalm-entries', true).catch(()=>null);
+    allEntries = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    allEntries = [];
+  }
+  populateMonthFilter();
+  renderStats();
+  renderTable();
+}
+
+function populateMonthFilter(){
+  const sel = document.getElementById('filterMonth');
+  const current = sel.value;
+  const months = Array.from(new Set(allEntries.map(e => (e.date||'').slice(0,7)).filter(Boolean))).sort().reverse();
+  sel.innerHTML = '<option value="">전체 기간</option>' +
+    months.map(m => `<option value="${m}">${m}</option>`).join('');
+  if(months.includes(current)) sel.value = current;
+}
+
+function getFiltered(){
+  const b = document.getElementById('filterBranch').value;
+  const m = document.getElementById('filterMonth').value;
+  return allEntries
+    .filter(e => !b || e.branch === b)
+    .filter(e => !m || (e.date||'').startsWith(m))
+    .sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.savedAt||'').localeCompare(a.savedAt||''));
+}
+
+function downloadCSV(){
+  const list = getFiltered();
+  if(list.length === 0){ alert('다운로드할 데이터가 없어요.'); return; }
+  const header = ['날짜','지점','디자이너','고객','구분','지명여부','경로','리뷰작성'];
+  const rows = list.map(e => [e.date||'', e.branch||'', e.designer||'', e.customer||'', e.type||'', e.designated==='Y'?'지명':'비지명', e.route||'', e.review==='Y'?'Y':'N']);
+  let csv = '\uFEFF' + header.join(',') + '\n';
+  rows.forEach(r => {
+    csv += r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',') + '\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const m = document.getElementById('filterMonth').value || 'all';
+  const b = document.getElementById('filterBranch').value || '전체';
+  a.href = url;
+  a.download = `로이드밤_방문기록_${b}_${m}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function renderStats(){
+  const list = getFiltered();
+  document.getElementById('statTotal').textContent = list.length;
+  document.getElementById('statNew').textContent = list.filter(e=>e.type==='신규').length;
+  document.getElementById('statReturn').textContent = list.filter(e=>e.type==='재방').length;
+  document.getElementById('statDesignated').textContent = list.filter(e=>e.designated==='Y').length;
+}
+
+function renderTable(){
+  renderStats();
+  const list = getFiltered();
+  const wrap = document.getElementById('tableWrap');
+  if(list.length === 0){
+    wrap.innerHTML = '<div class="empty">아직 기록이 없어요.</div>';
+    return;
+  }
+  let html = '<div class="table-scroll"><table><thead><tr>' +
+    '<th>날짜</th><th>지점</th><th>디자이너</th><th>고객</th><th>구분</th><th>지명</th><th>경로</th><th>리뷰</th>' +
+    '</tr></thead><tbody>';
+  list.forEach(e=>{
+    html += `<tr><td>${e.date||''}</td><td>${e.branch||''}</td><td>${e.designer||''}</td><td>${e.customer||''}</td><td>${e.type||''}</td><td>${e.designated==='Y'?'O':'X'}</td><td>${e.route||''}</td><td>${e.review==='Y'?'O':'X'}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function copyForClaude(){
+  const list = getFiltered();
+  if(list.length === 0){ alert('복사할 데이터가 없어요.'); return; }
+  let text = '날짜\t지점\t디자이너\t고객\t구분\t지명여부\t경로\t리뷰작성\n';
+  list.forEach(e=>{
+    text += `${e.date||''}\t${e.branch||''}\t${e.designer||''}\t${e.customer||''}\t${e.type||''}\t${e.designated==='Y'?'지명':'비지명'}\t${e.route||''}\t${e.review==='Y'?'Y':'N'}\n`;
+  });
+  navigator.clipboard.writeText(text).then(()=>{
+    alert('복사됐어요! 클로드 채팅창에 붙여넣기(Ctrl+V) 하시면 바로 분석해드려요.');
+  }).catch(()=>{
+    alert('복사에 실패했어요. 화면을 길게 눌러 직접 선택해주세요.');
+  });
+}
+
+async function clearAll(){
+  if(!confirm('정말 전체 기록을 삭제할까요? 되돌릴 수 없어요.')) return;
+  try{
+    await window.storage.set('lloydbalm-entries', JSON.stringify([]), true);
+    await loadEntries();
+    alert('전체 삭제됐어요.');
+  }catch(e){
+    alert('삭제 중 오류가 발생했어요.');
+  }
+}
+</script>
+</body>
+</html>
